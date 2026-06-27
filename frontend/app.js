@@ -511,7 +511,8 @@ async function submitDocForm(entry, data) {
     const a = document.createElement("a");
     a.href = url;
     const label = entry.selectedDocType === "tawaran" ? "Tawaran_Sebut_Harga" : "Sebut_Harga";
-    a.download = `${label}_${nama.replace(/\s+/g, "_")}.docx`;
+    const pegawai = (data["nama_pegawai"] ?? data["nama"] ?? "dokumen").replace(/\s+/g, "_");
+    a.download = `${label}_${pegawai}.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

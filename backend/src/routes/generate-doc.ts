@@ -1,26 +1,14 @@
 import { Router } from "express";
-import OpenAI from "openai";
 import { z } from "zod";
+import { generateDocDraft, classifyJenis } from "./pk29Engine.js";
+import { queryPekeliling } from "../chromaClient.js";
 
 const router = Router();
 
-const openai = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
-});
-
-const MODEL = process.env["OPENAI_MODEL"] ?? "gpt-4o-mini";
-
 const GenerateDocBody = z.object({
-  jenisPerolehan: z.string().min(1),
-  jenisKerja: z.string().optional(),
+  situasi: z.string().min(1),
   hargaSiling: z.number().positive(),
 });
-
-const JENIS_LABELS: Record<string, string> = {
-  bekalan: "Bekalan",
-  perkhidmatan: "Perkhidmatan",
-  kerja: "Kerja",
-};
 
 router.post("/generate-doc", async (req, res) => {
   const parsed = GenerateDocBody.safeParse(req.body);
@@ -29,8 +17,7 @@ router.post("/generate-doc", async (req, res) => {
     return;
   }
 
-  const { jenisPerolehan, jenisKerja, hargaSiling } = parsed.data;
-  const jenisLabel = JENIS_LABELS[jenisPerolehan] ?? jenisPerolehan;
+  const { situasi, hargaSiling } = parsed.data;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -38,71 +25,68 @@ router.post("/generate-doc", async (req, res) => {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
-  const keepAlive = setInterval(() => {
-    res.write(": ping\n\n");
-  }, 15000);
-  res.on("close", () => clearInterval(keepAlive));
-
-  const systemPrompt = `Kamu adalah pegawai perolehan kerajaan Malaysia yang pakar dalam menyediakan dokumen sebut harga mengikut Pekeliling Perbendaharaan PK 2.9. Hasilkan draf dokumen sebut harga yang lengkap dan formal dalam Bahasa Malaysia. Gunakan format rasmi kerajaan Malaysia.`;
-
-  const jenisKerjaLine = jenisKerja ? `\n**Jenis Kerja:** ${jenisKerja}` : "";
-  const hargaFormatted = hargaSiling.toLocaleString("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const userMessage = `Sila hasilkan draf dokumen sebut harga yang lengkap untuk perolehan berikut:
-
-**Jenis Perolehan:** ${jenisLabel}${jenisKerjaLine}
-**Harga Siling:** RM ${hargaFormatted}
-
-Hasilkan dokumen yang merangkumi:
-
-## ARAHAN KEPADA PENYEBUT HARGA
-Sediakan arahan lengkap kepada penyebut harga termasuk:
-- Tujuan dan skop perolehan
-- Syarat-syarat penyertaan (pendaftaran KKM/CIDB, SPKK jika kerja)
-- Tatacara penyerahan sebut harga
-- Tempoh sah laku tawaran
-- Hak agensi
-
-## BORANG SEBUT HARGA
-Sediakan format borang sebut harga yang boleh diisi oleh kontraktor/pembekal termasuk:
-- Maklumat syarikat
-- Harga yang ditawarkan
-- Jadual harga/senarai kuantiti (ringkasan)
-- Akuan penyebut harga
-
-## SYARAT-SYARAT AM
-Senaraikan syarat-syarat am perolehan yang berkaitan dengan jenis perolehan ini berdasarkan PK 2.9.
-
-## SENARAI SEMAK DOKUMEN (LAMPIRAN 8 PK 2.9)
-Hasilkan senarai semak lengkap dokumen yang perlu disertakan oleh penyebut harga.${jenisKerja ? ` Pastikan syarat khusus untuk ${jenisKerja} dimasukkan.` : ""}
-
-Gunakan format dokumen rasmi dengan pengepala yang sesuai.`;
+  const streamText = async (text: string, delay = 6) => {
+    const words = text.split(/(\s+)/);
+    for (const word of words) {
+      if (res.writableEnded) break;
+      res.write(`data: ${JSON.stringify({ content: word })}\n\n`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  };
 
   try {
-    const stream = await openai.chat.completions.create({
-      model: MODEL,
-      max_tokens: 8192,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      stream: true,
+    const { jenis } = classifyJenis(situasi);
+    const jenisLabel = jenis === "bekalan" ? "Bekalan" : jenis === "perkhidmatan" ? "Perkhidmatan" : "Kerja";
+
+    // Query ChromaDB for relevant document template chunks
+    const queryStr = `borang sebut harga ${jenisLabel} arahan penyebut harga syarat ${situasi}`;
+    const chunksPromise = queryPekeliling(queryStr, 4).catch((err) => {
+      console.error("[chroma] Doc query failed:", err.message);
+      return [];
     });
 
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
-      if (content) {
-        res.write(`data: ${JSON.stringify({ content })}\n\n`);
-      }
+    // Stream the draft document
+    const draft = generateDocDraft(situasi, hargaSiling);
+    await streamText(draft, 6);
+
+    // Append any relevant chunks as appendix
+    const chunks = await chunksPromise;
+    if (chunks.length > 0) {
+      const appendix = buildDocAppendix(chunks);
+      await streamText("\n\n---\n\n" + appendix, 5);
     }
 
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    }
   } catch (err) {
-    console.error("[generate-doc] AI error:", err);
-    res.write(`data: ${JSON.stringify({ error: "Ralat semasa menjana dokumen. Sila cuba lagi." })}\n\n`);
-    res.end();
+    console.error("[generate-doc] Error:", err);
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: "Ralat semasa menjana dokumen. Sila cuba lagi." })}\n\n`);
+      res.end();
+    }
   }
 });
+
+function buildDocAppendix(chunks: { document: string; metadata: Record<string, unknown> }[]): string {
+  const lines = [
+    "## Lampiran: Peruntukan Berkaitan dari PK 2.9",
+    "",
+    "Teks asal dari Pekeliling Perbendaharaan PK 2.9 yang berkaitan dengan dokumen ini:",
+    "",
+  ];
+
+  chunks.forEach((chunk, i) => {
+    const source = chunk.metadata?.source ?? chunk.metadata?.filename ?? chunk.metadata?.page ?? "";
+    const label = source ? ` *(${source})*` : "";
+    lines.push(`### Peruntukan ${i + 1}${label}`);
+    lines.push("");
+    lines.push(chunk.document.trim());
+    lines.push("");
+  });
+
+  return lines.join("\n");
+}
 
 export default router;

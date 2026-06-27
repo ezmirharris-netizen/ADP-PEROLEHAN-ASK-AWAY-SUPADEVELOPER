@@ -13,7 +13,6 @@
     <div class="login-box">
       <div class="login-head">
         <div class="icon-circle">
-          <!-- lock icon -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
         <h1>Sistem Perolehan</h1>
@@ -89,25 +88,18 @@
             <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Maklumat Perolehan
           </h2>
-          <p class="muted small">Isikan maklumat perolehan. AI akan memberikan panduan kaedah, pekeliling, dan dokumen yang diperlukan.</p>
+          <p class="muted small">Huraikan situasi perolehan anda. AI akan menentukan jenis perolehan dan memberikan panduan lengkap berdasarkan PK 2.9.</p>
         </div>
         <div class="card-body">
           <form id="perolehan-form" novalidate>
             <div class="field">
-              <label for="jenis-perolehan">Jenis Perolehan</label>
-              <select id="jenis-perolehan">
-                <option value="">Pilih jenis perolehan</option>
-                <option value="bekalan">Bekalan</option>
-                <option value="perkhidmatan">Perkhidmatan</option>
-                <option value="kerja">Kerja</option>
-              </select>
-              <div class="error-msg" id="err-jenis"></div>
-            </div>
-
-            <div class="field hidden" id="field-jenis-kerja">
-              <label for="jenis-kerja">Jenis Kerja</label>
-              <input id="jenis-kerja" type="text" placeholder="Contoh: Kerja naik bumbung, Kerja pendawaian elektrik, Ubahsuai tandas..." />
-              <div class="error-msg" id="err-jenis-kerja"></div>
+              <label for="situasi-perolehan">Huraikan Situasi Perolehan</label>
+              <textarea
+                id="situasi-perolehan"
+                rows="4"
+                placeholder="Contoh: Jabatan kami perlu membeli 10 unit laptop untuk kegunaan kakitangan baru. Laptop ini diperlukan untuk kerja harian termasuk pemprosesan data dan persidangan dalam talian..."
+              ></textarea>
+              <div class="error-msg" id="err-situasi"></div>
             </div>
 
             <div class="field">

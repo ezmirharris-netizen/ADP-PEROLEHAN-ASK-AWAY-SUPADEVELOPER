@@ -1,22 +1,13 @@
 /* =====================================================
    Sistem Perolehan — Frontend
-   Connects to the Express backend (see ../backend/).
    ===================================================== */
 
-// >>>>>>>>  CONFIGURE: URL of your running backend  <<<<<<<<
-const BACKEND_URL = "http://localhost:3001";
-// >>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+const BACKEND_URL = "";
 
 const VALID_CREDENTIALS = [
   { id: "admin", password: "admin123" },
   { id: "user01", password: "password" },
 ];
-
-const JENIS_LABEL = {
-  bekalan: "Bekalan",
-  perkhidmatan: "Perkhidmatan",
-  kerja: "Kerja",
-};
 
 /* ---------- View routing ---------- */
 const viewLogin = document.getElementById("view-login");
@@ -76,8 +67,6 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 
 /* ---------- Perolehan form ---------- */
 const perolehanForm = document.getElementById("perolehan-form");
-const jenisSelect = document.getElementById("jenis-perolehan");
-const fieldJenisKerja = document.getElementById("field-jenis-kerja");
 const submitBtn = document.getElementById("submit-btn");
 const submitDefault = document.getElementById("submit-icon-default");
 const submitLoading = document.getElementById("submit-icon-loading");
@@ -87,16 +76,6 @@ const entriesCount = document.getElementById("entries-count");
 
 let entries = [];
 let nextId = 1;
-
-jenisSelect.addEventListener("change", () => {
-  if (jenisSelect.value === "kerja") {
-    fieldJenisKerja.classList.remove("hidden");
-  } else {
-    fieldJenisKerja.classList.add("hidden");
-    document.getElementById("jenis-kerja").value = "";
-    document.getElementById("err-jenis-kerja").textContent = "";
-  }
-});
 
 function formatCurrency(num) {
   return num.toLocaleString("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -148,17 +127,13 @@ async function streamFromBackend(endpoint, body, onChunk, onDone, onError) {
 perolehanForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const jenis = jenisSelect.value;
-  const jenisKerja = document.getElementById("jenis-kerja").value.trim();
+  const situasi = document.getElementById("situasi-perolehan").value.trim();
   const hargaRaw = document.getElementById("harga-siling").value;
   const hargaNum = parseFloat(String(hargaRaw).replace(/,/g, ""));
 
   let valid = true;
-  document.getElementById("err-jenis").textContent = jenis ? "" : (valid = false, "Jenis perolehan diperlukan");
-  if (jenis === "kerja") {
-    document.getElementById("err-jenis-kerja").textContent =
-      jenisKerja ? "" : (valid = false, "Jenis kerja diperlukan");
-  }
+  document.getElementById("err-situasi").textContent =
+    situasi ? "" : (valid = false, "Sila huraikan situasi perolehan anda");
   document.getElementById("err-harga").textContent =
     !hargaRaw ? (valid = false, "Harga siling diperlukan") :
     isNaN(hargaNum) || hargaNum <= 0 ? (valid = false, "Harga siling mesti nombor positif yang sah") : "";
@@ -167,8 +142,7 @@ perolehanForm.addEventListener("submit", async (e) => {
   const entryId = nextId++;
   const entry = {
     id: entryId,
-    jenisPerolehan: jenis,
-    jenisKerja: jenis === "kerja" ? jenisKerja : undefined,
+    situasi,
     hargaSiling: formatCurrency(hargaNum),
     hargaSilingNum: hargaNum,
     tarikhDihantar: new Date().toLocaleString("ms-MY", {
@@ -187,13 +161,12 @@ perolehanForm.addEventListener("submit", async (e) => {
   entries.unshift(entry);
   renderEntries();
   perolehanForm.reset();
-  fieldJenisKerja.classList.add("hidden");
   setLoading(true);
 
   try {
     await streamFromBackend(
       "/api/perolehan/analyze",
-      { jenisPerolehan: jenis, jenisKerja: entry.jenisKerja, hargaSiling: hargaNum },
+      { situasi, hargaSiling: hargaNum },
       (chunk) => {
         entry.aiAnalysis += chunk;
         updateEntryBody(entry);
@@ -206,7 +179,7 @@ perolehanForm.addEventListener("submit", async (e) => {
       }
     );
   } catch (err) {
-    entry.aiAnalysis = `Ralat: Tidak dapat menghubungi pelayan. Pastikan backend berjalan di ${BACKEND_URL}`;
+    entry.aiAnalysis = `Ralat: Tidak dapat menghubungi pelayan. Pastikan backend berjalan.`;
     entry.errored = true;
     updateEntryBody(entry);
   } finally {
@@ -280,8 +253,9 @@ function renderMarkdown(text) {
 }
 
 function entryCardHtml(entry) {
-  const jenisLabel = JENIS_LABEL[entry.jenisPerolehan] || entry.jenisPerolehan;
-  const subname = entry.jenisKerja ? `<span class="entry-subname">— ${escapeHtml(entry.jenisKerja)}</span>` : "";
+  const situasiShort = entry.situasi.length > 80
+    ? entry.situasi.slice(0, 80) + "…"
+    : entry.situasi;
   const showPdf = entry.aiAnalysis && !entry.errored && !entry.streaming;
   return `
     <article class="card entry-card" data-id="${entry.id}">
@@ -289,8 +263,7 @@ function entryCardHtml(entry) {
         <div class="entry-meta">
           <div class="entry-meta-row">
             <span class="badge">#${entry.id}</span>
-            <span class="entry-name">${escapeHtml(jenisLabel)}</span>
-            ${subname}
+            <span class="entry-name">${escapeHtml(situasiShort)}</span>
             <span class="badge badge-primary">RM ${escapeHtml(entry.hargaSiling)}</span>
           </div>
           <p class="entry-date">${escapeHtml(entry.tarikhDihantar)}</p>
@@ -412,7 +385,7 @@ async function generateDocument(entry) {
   try {
     await streamFromBackend(
       "/api/perolehan/generate-doc",
-      { jenisPerolehan: entry.jenisPerolehan, jenisKerja: entry.jenisKerja, hargaSiling: entry.hargaSilingNum },
+      { situasi: entry.situasi, hargaSiling: entry.hargaSilingNum },
       (chunk) => {
         entry.docContent += chunk;
         const bodyEl = entriesList.querySelector(`[data-body="${entry.id}"]`);
@@ -424,7 +397,7 @@ async function generateDocument(entry) {
       }
     );
   } catch (err) {
-    entry.docContent = `Ralat: Tidak dapat menghubungi pelayan. Pastikan backend berjalan di ${BACKEND_URL}`;
+    entry.docContent = `Ralat: Tidak dapat menghubungi pelayan.`;
   } finally {
     entry.docStreaming = false;
     renderEntries();
@@ -471,33 +444,24 @@ function exportToPdf(entry) {
   doc.setTextColor(0);
   y = 36;
 
-  const metaH = entry.jenisKerja ? 30 : 24;
   doc.setFillColor(241, 245, 249);
-  doc.roundedRect(margin, y, contentW, metaH, 2, 2, "F");
+  doc.roundedRect(margin, y, contentW, 30, 2, 2, "F");
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(71, 85, 105);
-  doc.text("JENIS PEROLEHAN", margin + 4, y + 7);
+  doc.text("SITUASI PEROLEHAN", margin + 4, y + 7);
   doc.text("HARGA SILING", margin + contentW / 2, y + 7);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text(JENIS_LABEL[entry.jenisPerolehan] || entry.jenisPerolehan, margin + 4, y + 14);
+  const situasiWrapped = doc.splitTextToSize(entry.situasi, (contentW / 2) - 8);
+  doc.text(situasiWrapped.slice(0, 2), margin + 4, y + 14);
+  doc.setFontSize(10);
   doc.text(`RM ${entry.hargaSiling}`, margin + contentW / 2, y + 14);
-  if (entry.jenisKerja) {
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("JENIS KERJA", margin + 4, y + 21);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
-    doc.text(entry.jenisKerja, margin + 4, y + 27);
-  }
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Tarikh: ${entry.tarikhDihantar}`, margin + 4, y + (entry.jenisKerja ? 35 : 21));
-  y += entry.jenisKerja ? 40 : 30;
+  doc.text(`Tarikh: ${entry.tarikhDihantar}`, margin + 4, y + 27);
+  y += 38;
 
   doc.setDrawColor(203, 213, 225);
   doc.line(margin, y, pageW - margin, y);
@@ -570,6 +534,5 @@ function exportToPdf(entry) {
   }
 
   drawFooter();
-  const label = (JENIS_LABEL[entry.jenisPerolehan] || entry.jenisPerolehan).replace(/\s/g, "_");
-  doc.save(`Panduan_Perolehan_${label}_${entry.id}.pdf`);
+  doc.save(`Panduan_Perolehan_${entry.id}.pdf`);
 }

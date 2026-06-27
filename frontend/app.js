@@ -4,6 +4,26 @@
 
 const BACKEND_URL = "";
 
+/* ---------- Document field configs per doc type ---------- */
+const DOC_FIELDS = {
+  "sebut-harga": [
+    { key: "nama",         label: "Nama Pegawai Pemohon",     type: "text",  placeholder: "Nama penuh pegawai" },
+    { key: "namaSyarikat", label: "Nama Jabatan / Agensi",    type: "text",  placeholder: "Contoh: Jabatan Kerja Raya Malaysia" },
+    { key: "tarikh",       label: "Tarikh",                   type: "date" },
+  ],
+  "tawaran": [
+    { key: "tajuk",          label: "Tajuk Sebut Harga",           type: "text",  placeholder: "Contoh: Pembelian Komputer Riba", fullWidth: true },
+    { key: "kod_bidang_MOF", label: "Kod Bidang MOF",              type: "text",  placeholder: "Contoh: 210301" },
+    { key: "no_sebut_harga", label: "No. Sebut Harga",             type: "text",  placeholder: "Contoh: SH/2026/001" },
+    { key: "form_link",      label: "Pautan Borang (Google Form)", type: "url",   placeholder: "https://forms.gle/...", fullWidth: true, required: false },
+    { key: "tarikh_buka_sh", label: "Tarikh Buka Sebut Harga",    type: "date" },
+    { key: "tarikh_tutup_sh",label: "Tarikh Tutup Sebut Harga",   type: "date" },
+    { key: "nama_pegawai",   label: "Nama Pegawai",               type: "text",  placeholder: "Nama penuh pegawai", fullWidth: true },
+    { key: "no_phone",       label: "No. Telefon",                type: "tel",   placeholder: "03-XXXX XXXX" },
+    { key: "email",          label: "E-mel",                      type: "email", placeholder: "pegawai@jabatan.gov.my" },
+  ],
+};
+
 const VALID_CREDENTIALS = [
   { id: "admin", password: "admin123" },
   { id: "user01", password: "password" },
@@ -157,6 +177,12 @@ perolehanForm.addEventListener("submit", async (e) => {
     docContent: undefined,
     docStreaming: false,
     docDeclined: false,
+    showDocForm: false,
+    selectedDocType: null,
+    docFormSubmitting: false,
+    docFormError: "",
+    docGenSuccess: false,
+    docFormValues: null,
   };
   entries.unshift(entry);
   renderEntries();
@@ -306,29 +332,72 @@ function entryBodyHtml(entry) {
       <div class="doc-prompt-banner">
         <div class="doc-prompt-question">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>
-          Adakah anda mahukan pertolongan saya menghasilkan dokumen sebut harga?
+          Pilih dokumen yang ingin dijana:
         </div>
         <div class="doc-prompt-btns">
-          <button class="btn btn-doc-yes" data-action="doc-yes" data-id="${entry.id}">Ya</button>
+          <button class="btn btn-doc-yes" data-action="doc-yes" data-doctype="sebut-harga" data-id="${entry.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            Borang Sebut Harga
+          </button>
+          <button class="btn btn-doc-yes btn-doc-tawaran" data-action="doc-yes" data-doctype="tawaran" data-id="${entry.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Kenyataan Tawaran
+          </button>
           <button class="btn btn-outline btn-sm" data-action="doc-no" data-id="${entry.id}">Tidak</button>
         </div>
       </div>`;
   }
 
-  if (entry.docContent !== undefined || entry.docStreaming) {
-    const docMd = entry.docContent ? renderMarkdown(entry.docContent) : "";
+  if (entry.showDocForm) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const isTawaran = entry.selectedDocType === "tawaran";
+    const formTitle = isTawaran ? "Kenyataan Tawaran Sebut Harga" : "Borang Sebut Harga";
+    const docFields = DOC_FIELDS[entry.selectedDocType ?? "sebut-harga"] ?? DOC_FIELDS["sebut-harga"];
+    let fieldsHtml = "";
+    for (const field of docFields) {
+      const inputId = `doc-field-${field.key}-${entry.id}`;
+      let defaultVal = "";
+      if (field.type === "date") defaultVal = todayStr;
+      if (field.key === "tajuk" && entry.situasi) defaultVal = entry.situasi.slice(0, 100);
+      const savedVal = entry.docFormValues?.[field.key] ?? defaultVal;
+      const optional = field.required === false ? ' <span class="field-optional">(pilihan)</span>' : "";
+      fieldsHtml += `
+            <div class="field${field.fullWidth ? " field-full" : ""}">
+              <label for="${inputId}">${escapeHtml(field.label)}${optional}</label>
+              <input type="${field.type ?? "text"}" id="${inputId}" placeholder="${escapeHtml(field.placeholder ?? "")}" value="${escapeHtml(savedVal)}" />
+            </div>`;
+    }
     html += `
-      <div class="doc-section">
-        <div class="doc-section-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-          Draf Dokumen Sebut Harga
-          ${entry.docStreaming ? '<span class="streaming-cursor"></span>' : ""}
+      <div class="doc-form ${isTawaran ? "doc-form-tawaran" : ""}">
+        <div class="doc-form-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${isTawaran ? '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' : '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'}</svg>
+          Maklumat — ${formTitle}
         </div>
-        <div class="doc-section-body">
-          ${entry.docStreaming && !entry.docContent
-            ? `<p class="muted small streaming-cursor">Menjana dokumen sebut harga</p>`
-            : `<div class="md">${docMd}</div>`}
+        <div class="doc-form-body">
+          <div class="doc-form-grid">${fieldsHtml}
+          </div>
+          ${entry.docFormError ? `<div class="doc-form-error">${escapeHtml(entry.docFormError)}</div>` : ""}
+          <div class="doc-form-actions">
+            <button class="btn btn-outline btn-sm" data-action="doc-cancel" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>Batal</button>
+            <button class="btn btn-doc-submit" data-action="doc-submit" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>
+              ${entry.docFormSubmitting
+                ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
+                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
+            </button>
+          </div>
         </div>
+      </div>`;
+  }
+
+  if (entry.docGenSuccess) {
+    const successLabel = entry.selectedDocType === "tawaran"
+      ? "Kenyataan Tawaran Sebut Harga"
+      : "Borang Sebut Harga";
+    html += `
+      <div class="doc-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span><strong>${successLabel}</strong> berjaya dijana dan dimuat turun.</span>
+        <button class="btn btn-outline btn-sm" data-action="doc-again" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Jana Lagi</button>
       </div>`;
   }
 
@@ -367,40 +436,95 @@ entriesList.addEventListener("click", (e) => {
   } else if (btn.dataset.action === "pdf") {
     exportToPdf(entry);
   } else if (btn.dataset.action === "doc-yes") {
-    generateDocument(entry);
+    openDocForm(entry, btn.dataset.doctype ?? "sebut-harga");
   } else if (btn.dataset.action === "doc-no") {
     entry.showDocPrompt = false;
     entry.docDeclined = true;
     renderEntries();
+  } else if (btn.dataset.action === "doc-again") {
+    entry.docGenSuccess = false;
+    entry.showDocPrompt = true;
+    renderEntries();
+  } else if (btn.dataset.action === "doc-cancel") {
+    entry.showDocForm = false;
+    entry.showDocPrompt = true;
+    entry.docFormError = "";
+    renderEntries();
+  } else if (btn.dataset.action === "doc-submit") {
+    const docType = entry.selectedDocType ?? "sebut-harga";
+    const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
+    const data = {};
+    for (const field of fields) {
+      const el = document.getElementById(`doc-field-${field.key}-${id}`);
+      data[field.key] = el?.value?.trim() ?? "";
+    }
+    submitDocForm(entry, data);
   }
 });
 
-/* ---------- Document generation ---------- */
-async function generateDocument(entry) {
+/* ---------- Document form ---------- */
+function openDocForm(entry, docType) {
   entry.showDocPrompt = false;
-  entry.docContent = "";
-  entry.docStreaming = true;
+  entry.showDocForm = true;
+  entry.selectedDocType = docType ?? "sebut-harga";
+  entry.docFormError = "";
+  entry.docFormSubmitting = false;
   renderEntries();
+}
+
+async function submitDocForm(entry, data) {
+  const docType = entry.selectedDocType ?? "sebut-harga";
+  const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
+  for (const field of fields) {
+    if (field.required !== false && !data[field.key]) {
+      entry.docFormError = `${field.label} diperlukan.`;
+      entry.docFormValues = data;
+      updateEntryBody(entry);
+      return;
+    }
+  }
+
+  entry.docFormValues = data;
+  entry.docFormSubmitting = true;
+  entry.docFormError = "";
+  updateEntryBody(entry);
 
   try {
-    await streamFromBackend(
-      "/api/perolehan/generate-doc",
-      { situasi: entry.situasi, hargaSiling: entry.hargaSilingNum },
-      (chunk) => {
-        entry.docContent += chunk;
-        const bodyEl = entriesList.querySelector(`[data-body="${entry.id}"]`);
-        if (bodyEl) bodyEl.innerHTML = entryBodyHtml(entry);
-      },
-      () => {},
-      (errMsg) => {
-        entry.docContent = `Ralat: ${errMsg}`;
-      }
-    );
-  } catch (err) {
-    entry.docContent = `Ralat: Tidak dapat menghubungi pelayan.`;
-  } finally {
-    entry.docStreaming = false;
+    const response = await fetch(`${BACKEND_URL}/api/perolehan/generate-surat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        situasi: entry.situasi,
+        hargaSiling: entry.hargaSilingNum,
+        docType,
+        extraData: data,
+      }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({ error: `Ralat pelayan ${response.status}` }));
+      throw new Error(errData.error ?? `Ralat pelayan ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const label = entry.selectedDocType === "tawaran" ? "Tawaran_Sebut_Harga" : "Sebut_Harga";
+    a.download = `${label}_${nama.replace(/\s+/g, "_")}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    entry.showDocForm = false;
+    entry.docGenSuccess = true;
+    entry.docFormSubmitting = false;
     renderEntries();
+  } catch (err) {
+    entry.docFormError = err.message ?? "Ralat semasa menjana dokumen.";
+    entry.docFormSubmitting = false;
+    updateEntryBody(entry);
   }
 }
 

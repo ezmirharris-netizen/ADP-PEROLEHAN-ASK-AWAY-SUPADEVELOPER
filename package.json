@@ -1,0 +1,30 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "AI-powered Malaysian government procurement guidance system based on **Pekeliling Perbendaharaan PK 2.9 (Kaedah Sebut Harga)**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
+    "@google/genai": "^2.10.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.0.1",
+    "chromadb": "^3.4.3",
+    "cors": "^2.8.6",
+    "docx": "^9.7.1",
+    "docxtemplater": "^3.69.0",
+    "express": "^5.2.1",
+    "openai": "^6.45.0",
+    "pizzip": "^3.2.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  }
+}

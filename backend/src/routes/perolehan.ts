@@ -14,18 +14,23 @@ function buildSystemPrompt(): string {
   return `Anda adalah Pakar Perolehan Kerajaan Malaysia yang mahir dalam Pekeliling Perbendaharaan PK 2.9 (Kaedah Sebut Harga) dan semua pekeliling perbendaharaan berkaitan.
 
 ARAHAN PENTING:
-- Analisis situasi berdasarkan kandungan dasar PK 2.9 yang diberikan sebagai sumber utama
+- Analisis situasi berdasarkan kandungan dasar PK 2.9 yang diberikan sebagai sumber utama, disokong oleh pengetahuan sebenar anda tentang struktur dan kandungan PK 2.9
 - Tentukan sendiri jenis perolehan (Bekalan / Perkhidmatan / Kerja) dan kaedah yang betul berdasarkan nilai dan dasar
 - Gunakan Bahasa Malaysia yang formal tetapi mudah difahami
-- Sertakan nombor seksyen PK 2.9 yang spesifik apabila merujuk peruntukan
+- Sertakan nombor seksyen PK 2.9 yang sebenar dan spesifik (contoh: "PK 2.9, Seksyen 6.2") serta nombor Lampiran yang berkaitan apabila merujuk peruntukan — JANGAN gunakan label generik seperti "Kandungan 1" atau "Kandungan 2"
 - Tegaskan perkara penting menggunakan **bold**
-- Integrasikan kandungan dasar secara semula jadi dalam penjelasan
-- Apabila merujuk kandungan sumber, gunakan label "Kandungan 1", "Kandungan 2" dan seterusnya (BUKAN "S.1", "S.2" atau format lain)
+- Integrasikan kandungan dasar secara semula jadi dalam penjelasan, tanpa menyebut secara literal bahawa ia "kandungan yang diberikan" atau merujuk kepada sumber sebagai "Kandungan N"
 
 PERATURAN PENOMBORAN LANGKAH (WAJIB DIPATUHI):
 - Dalam bahagian "Tatacara Pelaksanaan Langkah demi Langkah", nombor langkah MESTI berurutan: 1, 2, 3, 4, 5 dan seterusnya
 - JANGAN gunakan 1, 1, 1 atau nombor yang berulang — setiap langkah mesti bernombor unik dan berturutan
 - Pastikan setiap item dalam senarai bernombor mempunyai nombor yang berbeza
+
+FORMAT DAN PENUTUP (WAJIB DIPATUHI):
+- Dokumen ini adalah laporan rasmi, BUKAN perbualan — jangan tulis seperti sedang berbual dengan pengguna
+- JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
+- JANGAN tambah bahagian tambahan selain 7 bahagian yang ditetapkan di bawah
+- Laporan MESTI tamat sebaik selesai bahagian "Amaran dan Perkara Yang Perlu Dielakkan" — tanpa ayat penutup tambahan selepas itu
 
 ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahagian):
 
@@ -36,7 +41,7 @@ ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahag
 [Nyatakan kaedah (Pembelian Terus / Sebut Harga Bumiputera / Sebut Harga / Tender), had nilai yang berkaitan, dan kenapa kaedah ini terpakai untuk situasi ini]
 
 ## Pekeliling dan Peruntukan Yang Terpakai
-[Senaraikan pekeliling dan seksyen PK 2.9 yang relevan dengan nombor rujukan yang tepat. Jika merujuk kandungan sumber, gunakan "Kandungan 1", "Kandungan 2" dsb.]
+[Senaraikan pekeliling dan seksyen PK 2.9 yang relevan dengan nombor seksyen sebenar dan spesifik]
 
 ## Tatacara Pelaksanaan Langkah demi Langkah
 [Langkah bernombor BERURUTAN (1, 2, 3, 4...) yang boleh terus dilaksanakan oleh pegawai, berdasarkan prosedur sebenar PK 2.9. SETIAP langkah mesti mempunyai nombor yang berbeza dan berturutan.]
@@ -60,11 +65,9 @@ function buildUserPrompt(situasi: string, hargaSiling: number, chunks: ChunkResu
   const chunksText =
     chunks.length > 0
       ? chunks
-          .map((c, i) => {
-            return `[Kandungan ${i + 1}]\n${c.document.trim()}`;
-          })
+          .map((c) => c.document.trim())
           .join("\n\n---\n\n")
-      : "Tiada kandungan tambahan daripada dokumen PK 2.9. Gunakan pengetahuan anda tentang PK 2.9.";
+      : "Tiada petikan tambahan ditemui. Gunakan pengetahuan sebenar anda tentang struktur dan nombor seksyen PK 2.9.";
 
   return `Seorang pegawai kerajaan memerlukan panduan perolehan untuk situasi berikut:
 
@@ -75,13 +78,13 @@ ${situasi}
 
 ---
 
-**KANDUNGAN DASAR DARI DOKUMEN PK 2.9 (Sumber Utama — Gunakan untuk analisis):**
+**PETIKAN RUJUKAN LATAR BELAKANG (gunakan sebagai sokongan, BUKAN sebagai satu-satunya sumber rujukan — gunakan juga pengetahuan sebenar anda tentang nombor seksyen dan lampiran PK 2.9 yang tepat):**
 
 ${chunksText}
 
 ---
 
-Berdasarkan situasi dan kandungan dasar PK 2.9 di atas, analisis dan isi kesemua 7 bahagian format yang ditetapkan dengan lengkap dan tepat. Pastikan kaedah perolehan yang disyorkan adalah betul berdasarkan nilai siling RM ${hargaFormatted} dan jenis perolehan yang anda tentukan.`;
+Berdasarkan situasi dan rujukan di atas, analisis dan isi kesemua 7 bahagian format yang ditetapkan dengan lengkap dan tepat, dengan nombor seksyen PK 2.9 yang sebenar (bukan label generik). Pastikan kaedah perolehan yang disyorkan adalah betul berdasarkan nilai siling RM ${hargaFormatted} dan jenis perolehan yang anda tentukan.`;
 }
 
 router.post("/analyze", async (req, res) => {

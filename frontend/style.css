@@ -383,6 +383,23 @@ input:focus, select:focus {
   color: #9ca3af;
   margin-left: 4px;
 }
+.file-upload-wrap { display: flex; flex-direction: column; gap: 4px; }
+.file-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 9px 14px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.875rem;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 40px;
+  word-break: break-all;
+}
+.file-upload-label:hover { border-color: #1e40af; background: #eff6ff; color: #1e40af; }
 .doc-form-error {
   color: #b91c1c;
   font-size: 12px;
@@ -433,3 +450,58 @@ input:focus, select:focus {
   color: #166534;
 }
 .doc-success svg { width: 16px; height: 16px; color: #16a34a; flex-shrink: 0; }
+
+.sst-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+}
+.sst-suggestion-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  color: #1e40af;
+}
+.sst-suggestion-left svg { flex-shrink: 0; margin-top: 2px; }
+.sst-suggestion-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.sst-suggestion-desc { font-size: 13px; color: #1e3a8a; }
+.sst-suggestion-btns { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+.btn-sst-yes {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1d4ed8; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 6px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-sst-yes:hover { background: #1e40af; }
+.btn-sst-yes svg { flex-shrink: 0; }
+
+.sst-accepted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 9px 14px;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e40af;
+}
+.sst-accepted svg { color: #2563eb; flex-shrink: 0; }

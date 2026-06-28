@@ -6,7 +6,35 @@ import {
 } from "docx";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import multer from "multer";
 import { classifyJenis, determineKaedah } from "./pk29Engine.js";
+
+function extractDocxBodyXml(buffer: Buffer): string {
+  try {
+    const zip = new PizZip(buffer);
+    const xmlText = zip.file("word/document.xml")?.asText() ?? "";
+    const match = xmlText.match(/<w:body>([\s\S]+)<\/w:body>/);
+    if (!match) return "";
+    const body = match[1].replace(/<w:sectPr[\s\S]*?<\/w:sectPr>\s*$/, "").trim();
+    return body;
+  } catch {
+    return "";
+  }
+}
+
+function injectXmlAtMarker(docXml: string, marker: string, rawXml: string): string {
+  const safeMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Use a tempered greedy token so we never cross into another <w:p> — this ensures
+  // we match only the single paragraph that contains the marker, not everything from
+  // the first paragraph in the document down to the marker.
+  const regex = new RegExp(
+    `<w:p[ >](?:(?!<w:p[ >])[\\s\\S])*?${safeMarker}[\\s\\S]*?<\\/w:p>`,
+    "g"
+  );
+  return docXml.replace(regex, rawXml);
+}
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -202,14 +230,54 @@ function buildSebuthargaDoc(data: Record<string, string>): Document {
 
 // ── Route ────────────────────────────────────────────────────────────────────
 
-router.post("/generate-surat", async (req, res) => {
-  const parsed = GenerateSuratBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Input tidak sah. Sila semak semua medan." });
-    return;
-  }
+router.post("/generate-surat", upload.any(), async (req, res) => {
+  let situasi: string;
+  let hargaSiling: number;
+  let docType: "sebut-harga" | "tawaran";
+  let extraData: Record<string, string>;
+  let docxInjections: Record<string, string> = {};
 
-  const { situasi, hargaSiling, docType, extraData } = parsed.data;
+  const isMultipart = !!(req.headers["content-type"]?.includes("multipart/form-data"));
+
+  if (isMultipart) {
+    situasi = String(req.body.situasi ?? "").trim();
+    hargaSiling = parseFloat(req.body.hargaSiling ?? "0");
+    const rawDocType = String(req.body.docType ?? "sebut-harga");
+    docType = rawDocType === "tawaran" ? "tawaran" : "sebut-harga";
+    extraData = {};
+
+    for (const [key, val] of Object.entries(req.body as Record<string, string>)) {
+      if (key.startsWith("extra_")) {
+        extraData[key.slice(6)] = String(val);
+      }
+    }
+
+    const uploadedFiles = (req.files as Express.Multer.File[]) ?? [];
+    for (const file of uploadedFiles) {
+      if (file.fieldname.startsWith("file_")) {
+        const fieldKey = file.fieldname.slice(5);
+        const bodyXml = extractDocxBodyXml(file.buffer);
+        if (bodyXml) {
+          docxInjections[fieldKey] = bodyXml;
+          console.log(`[generate-surat] DOCX body extracted for ${fieldKey}: ${bodyXml.length} chars`);
+        } else {
+          console.warn(`[generate-surat] Empty DOCX body for ${fieldKey}`);
+        }
+      }
+    }
+
+    if (!situasi || isNaN(hargaSiling) || hargaSiling <= 0) {
+      res.status(400).json({ error: "Input tidak sah. Sila semak semua medan." });
+      return;
+    }
+  } else {
+    const parsed = GenerateSuratBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Input tidak sah. Sila semak semua medan." });
+      return;
+    }
+    ({ situasi, hargaSiling, docType, extraData } = parsed.data);
+  }
 
   try {
     // Auto-compute classification fields
@@ -221,12 +289,15 @@ router.post("/generate-surat", async (req, res) => {
     // Process extra data — format date fields
     const processedExtra: Record<string, string> = {};
     for (const [key, val] of Object.entries(extraData)) {
-      if (val && (key === "tarikh" || key.startsWith("tarikh_"))) {
+      const lk = key.toLowerCase();
+      if (val && (lk === "tarikh" || lk.startsWith("tarikh_") || lk.startsWith("tarikh"))) {
         processedExtra[key] = formatMalaysianDate(val);
       } else {
         processedExtra[key] = val;
       }
     }
+
+    const FILE_INJECT_KEYS = ["SENARAI_SPESIFIKASI", "Jadual_Tawaran_Harga"];
 
     const renderData: Record<string, string> = {
       situasi,
@@ -236,8 +307,17 @@ router.post("/generate-surat", async (req, res) => {
       ...processedExtra,
     };
 
+    // Replace file-based fields with unique markers (raw XML injected after render)
+    for (const key of FILE_INJECT_KEYS) {
+      if (docxInjections[key]) {
+        renderData[key] = `DOCXINJECT_${key}`;
+      } else if (!(key in renderData)) {
+        renderData[key] = "";
+      }
+    }
+
     const safeNama = (
-      processedExtra["nama"] ?? processedExtra["nama_pegawai"] ?? "dokumen"
+      processedExtra["nama"] ?? processedExtra["nama_pegawai"] ?? processedExtra["Nama_Pegawai"] ?? "dokumen"
     ).replace(/[^a-zA-Z0-9]/g, "_");
     const label = DOC_LABEL[docType] ?? "Dokumen";
 
@@ -251,7 +331,7 @@ router.post("/generate-surat", async (req, res) => {
         return;
       }
       const bucket = process.env["SUPABASE_BUCKET"] ?? "templates";
-      const templateFile = "kenyataan-tawaran-sebut-harga.docx";
+      const templateFile = "dokumen-sebut-harga-template.docx";
       const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${templateFile}`;
 
       const fetchRes = await fetch(publicUrl);
@@ -267,7 +347,28 @@ router.post("/generate-surat", async (req, res) => {
       const zip = new PizZip(Buffer.from(arrayBuffer));
       const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
       doc.render(renderData);
-      buffer = doc.getZip().generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
+
+      // Post-process: inject uploaded DOCX body XML at marker positions
+      const renderedZip = doc.getZip();
+      if (Object.keys(docxInjections).length > 0) {
+        const docXmlEntry = renderedZip.file("word/document.xml");
+        if (docXmlEntry) {
+          let docXml = docXmlEntry.asText();
+          for (const [fieldKey, bodyXml] of Object.entries(docxInjections)) {
+            const marker = `DOCXINJECT_${fieldKey}`;
+            const before = docXml;
+            docXml = injectXmlAtMarker(docXml, marker, bodyXml);
+            if (docXml !== before) {
+              console.log(`[generate-surat] Injected DOCX content for ${fieldKey}`);
+            } else {
+              console.warn(`[generate-surat] Marker not found in rendered XML for ${fieldKey}`);
+            }
+          }
+          renderedZip.file("word/document.xml", docXml);
+        }
+      }
+
+      buffer = renderedZip.generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
     } else {
       // Build sebut-harga programmatically
       const docxDoc = buildSebuthargaDoc(renderData);

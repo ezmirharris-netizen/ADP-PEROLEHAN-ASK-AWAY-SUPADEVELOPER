@@ -12,15 +12,19 @@ const DOC_FIELDS = {
     { key: "tarikh",       label: "Tarikh",                   type: "date" },
   ],
   "tawaran": [
-    { key: "tajuk",          label: "Tajuk Sebut Harga",           type: "text",  placeholder: "Contoh: Pembelian Komputer Riba", fullWidth: true },
-    { key: "kod_bidang_MOF", label: "Kod Bidang MOF",              type: "text",  placeholder: "Contoh: 210301" },
-    { key: "no_sebut_harga", label: "No. Sebut Harga",             type: "text",  placeholder: "Contoh: SH/2026/001" },
-    { key: "form_link",      label: "Pautan Borang (Google Form)", type: "url",   placeholder: "https://forms.gle/...", fullWidth: true, required: false },
-    { key: "tarikh_buka_sh", label: "Tarikh Buka Sebut Harga",    type: "date" },
-    { key: "tarikh_tutup_sh",label: "Tarikh Tutup Sebut Harga",   type: "date" },
-    { key: "nama_pegawai",   label: "Nama Pegawai",               type: "text",  placeholder: "Nama penuh pegawai", fullWidth: true },
-    { key: "no_phone",       label: "No. Telefon",                type: "tel",   placeholder: "03-XXXX XXXX" },
-    { key: "email",          label: "E-mel",                      type: "email", placeholder: "pegawai@jabatan.gov.my" },
+    { key: "Tajuk",               label: "Tajuk Sebut Harga",             type: "text",  placeholder: "Contoh: Pembelian Komputer Riba", fullWidth: true },
+    { key: "No_Siri",             label: "No. Siri",                      type: "text",  placeholder: "Contoh: 001" },
+    { key: "No_SH",               label: "No. Sebut Harga",               type: "text",  placeholder: "Contoh: SH/2026/001" },
+    { key: "KOD_MOF",             label: "Kod Bidang MOF",                type: "text",  placeholder: "Contoh: 210301" },
+    { key: "link_Gform",          label: "Pautan Google Form",            type: "url",   placeholder: "https://forms.gle/...", fullWidth: true, required: false },
+    { key: "Tarikh_buka_SH",      label: "Tarikh Buka Sebut Harga",       type: "date" },
+    { key: "Tarikh_tutup_SH",     label: "Tarikh Tutup Sebut Harga",      type: "date" },
+    { key: "Masa_tutup",          label: "Masa Tutup",                    type: "time",  placeholder: "Contoh: 12:00 PM" },
+    { key: "Nama_Pegawai",        label: "Nama Pegawai",                  type: "text",  placeholder: "Nama penuh pegawai", fullWidth: true },
+    { key: "No_Phone",            label: "No. Telefon",                   type: "tel",   placeholder: "03-XXXX XXXX" },
+    { key: "Email_Pegawai",       label: "E-mel Pegawai",                 type: "email", placeholder: "pegawai@jabatan.gov.my" },
+    { key: "SENARAI_SPESIFIKASI", label: "Senarai Spesifikasi (DOCX)",    type: "file",  accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document", fullWidth: true },
+    { key: "Jadual_Tawaran_Harga",label: "Jadual Tawaran Harga (DOCX)",   type: "file",  accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document", fullWidth: true },
   ],
 };
 
@@ -358,13 +362,23 @@ function entryBodyHtml(entry) {
       const inputId = `doc-field-${field.key}-${entry.id}`;
       let defaultVal = "";
       if (field.type === "date") defaultVal = todayStr;
-      if (field.key === "tajuk" && entry.situasi) defaultVal = entry.situasi.slice(0, 100);
+      if ((field.key === "tajuk" || field.key === "Tajuk") && entry.situasi) defaultVal = entry.situasi.slice(0, 100);
       const savedVal = entry.docFormValues?.[field.key] ?? defaultVal;
       const optional = field.required === false ? ' <span class="field-optional">(pilihan)</span>' : "";
+      const isFile = field.type === "file";
+      const savedFileName = isFile ? (entry.docFormValues?.[field.key + "__name"] ?? "") : "";
       fieldsHtml += `
             <div class="field${field.fullWidth ? " field-full" : ""}">
               <label for="${inputId}">${escapeHtml(field.label)}${optional}</label>
-              <input type="${field.type ?? "text"}" id="${inputId}" placeholder="${escapeHtml(field.placeholder ?? "")}" value="${escapeHtml(savedVal)}" />
+              ${isFile
+                ? `<div class="file-upload-wrap">
+                    <label class="file-upload-label" for="${inputId}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      ${savedFileName ? escapeHtml(savedFileName) : "Pilih fail DOCX..."}
+                    </label>
+                    <input type="file" id="${inputId}" accept="${escapeHtml(field.accept ?? ".docx")}" style="display:none;" onchange="this.previousElementSibling.textContent=this.files[0]?.name??'Pilih fail DOCX...'" />
+                  </div>`
+                : `<input type="${field.type ?? "text"}" id="${inputId}" placeholder="${escapeHtml(field.placeholder ?? "")}" value="${escapeHtml(savedVal)}" />`}
             </div>`;
     }
     html += `
@@ -399,6 +413,34 @@ function entryBodyHtml(entry) {
         <span><strong>${successLabel}</strong> berjaya dijana dan dimuat turun.</span>
         <button class="btn btn-outline btn-sm" data-action="doc-again" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Jana Lagi</button>
       </div>`;
+
+    if (entry.selectedDocType === "tawaran" && !entry.sstDismissed) {
+      html += `
+      <div class="sst-suggestion">
+        <div class="sst-suggestion-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <div>
+            <div class="sst-suggestion-title">Langkah Seterusnya</div>
+            <div class="sst-suggestion-desc">Adakah anda ingin sistem membantu menjana <strong>Surat Setuju Terima</strong>?</div>
+          </div>
+        </div>
+        <div class="sst-suggestion-btns">
+          <button class="btn btn-sst-yes" data-action="sst-yes" data-id="${entry.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Ya, Jana Sekarang
+          </button>
+          <button class="btn btn-outline btn-sm" data-action="sst-no" data-id="${entry.id}">Tidak</button>
+        </div>
+      </div>`;
+    }
+
+    if (entry.sstAccepted) {
+      html += `
+      <div class="sst-accepted">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Baik! Sila isi maklumat di bawah untuk menjana <strong>Surat Setuju Terima</strong>.
+      </div>`;
+    }
   }
 
   return html;
@@ -441,6 +483,13 @@ entriesList.addEventListener("click", (e) => {
     entry.showDocPrompt = false;
     entry.docDeclined = true;
     renderEntries();
+  } else if (btn.dataset.action === "sst-yes") {
+    entry.sstDismissed = true;
+    entry.sstAccepted = true;
+    renderEntries();
+  } else if (btn.dataset.action === "sst-no") {
+    entry.sstDismissed = true;
+    renderEntries();
   } else if (btn.dataset.action === "doc-again") {
     entry.docGenSuccess = false;
     entry.showDocPrompt = true;
@@ -454,11 +503,18 @@ entriesList.addEventListener("click", (e) => {
     const docType = entry.selectedDocType ?? "sebut-harga";
     const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
     const data = {};
+    const files = {};
     for (const field of fields) {
       const el = document.getElementById(`doc-field-${field.key}-${id}`);
-      data[field.key] = el?.value?.trim() ?? "";
+      if (field.type === "file") {
+        const file = el?.files?.[0] ?? null;
+        files[field.key] = file;
+        data[field.key] = file?.name ?? "";
+      } else {
+        data[field.key] = el?.value?.trim() ?? "";
+      }
     }
-    submitDocForm(entry, data);
+    submitDocForm(entry, data, files);
   }
 });
 
@@ -472,7 +528,7 @@ function openDocForm(entry, docType) {
   renderEntries();
 }
 
-async function submitDocForm(entry, data) {
+async function submitDocForm(entry, data, files = {}) {
   const docType = entry.selectedDocType ?? "sebut-harga";
   const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
   for (const field of fields) {
@@ -490,16 +546,39 @@ async function submitDocForm(entry, data) {
   updateEntryBody(entry);
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/perolehan/generate-surat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        situasi: entry.situasi,
-        hargaSiling: entry.hargaSilingNum,
-        docType,
-        extraData: data,
-      }),
-    });
+    const hasFiles = Object.values(files).some((f) => f instanceof File);
+    let response;
+
+    if (hasFiles) {
+      const formData = new FormData();
+      formData.append("situasi", entry.situasi);
+      formData.append("hargaSiling", String(entry.hargaSilingNum));
+      formData.append("docType", docType);
+      for (const field of fields) {
+        if (field.type === "file") {
+          if (files[field.key] instanceof File) {
+            formData.append(`file_${field.key}`, files[field.key]);
+          }
+        } else {
+          formData.append(`extra_${field.key}`, data[field.key] ?? "");
+        }
+      }
+      response = await fetch(`${BACKEND_URL}/api/perolehan/generate-surat`, {
+        method: "POST",
+        body: formData,
+      });
+    } else {
+      response = await fetch(`${BACKEND_URL}/api/perolehan/generate-surat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          situasi: entry.situasi,
+          hargaSiling: entry.hargaSilingNum,
+          docType,
+          extraData: data,
+        }),
+      });
+    }
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({ error: `Ralat pelayan ${response.status}` }));
@@ -511,7 +590,7 @@ async function submitDocForm(entry, data) {
     const a = document.createElement("a");
     a.href = url;
     const label = entry.selectedDocType === "tawaran" ? "Tawaran_Sebut_Harga" : "Sebut_Harga";
-    const pegawai = (data["nama_pegawai"] ?? data["nama"] ?? "dokumen").replace(/\s+/g, "_");
+    const pegawai = (data["Nama_Pegawai"] ?? data["nama_pegawai"] ?? data["nama"] ?? "dokumen").replace(/\s+/g, "_");
     a.download = `${label}_${pegawai}.docx`;
     document.body.appendChild(a);
     a.click();

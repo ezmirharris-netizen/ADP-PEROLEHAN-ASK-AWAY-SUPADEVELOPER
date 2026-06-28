@@ -6,9 +6,31 @@ AI-powered Malaysian government procurement guidance system based on **Pekelilin
 
 - Login (client-side session)
 - Form: Jenis Perolehan (Bekalan / Perkhidmatan / Kerja) with conditional Jenis Kerja + Harga Siling
-- AI analysis — PK 2.9 compliant guidance streamed in real-time
-- Follow-up AI document generation (Arahan, Borang, Syarat-Syarat Am, Senarai Semak)
-- PDF export
+- AI analysis — PK 2.9 compliant guidance (rule-based engine)
+- Document generation — Sebut Harga DOCX exported from Supabase-hosted templates
+- PDF upload support for Senarai Spesifikasi & Jadual Tawaran Harga fields
+
+---
+
+## Architecture
+
+```
+User Browser
+    ↓  HTTPS
+Backend (Express/TypeScript)     ← serves frontend static files too
+    ↓  HTTPS
+Supabase Storage                 ← hosts .docx template files
+    ↓
+Generated .docx returned to user
+```
+
+| Part | Technology |
+|---|---|
+| Frontend | Vanilla HTML / CSS / JS (served by backend) |
+| Backend | Express 5, TypeScript, tsx |
+| AI Guidance | Rule-based PK 2.9 engine (`pk29Engine.ts`) |
+| Vector Search | ChromaDB (in-memory, loads on startup) |
+| Template Storage | Supabase Storage bucket (`templates`) |
 
 ---
 
@@ -16,72 +38,74 @@ AI-powered Malaysian government procurement guidance system based on **Pekelilin
 
 ```
 .
-├── backend/        # Express 5 API server (TypeScript)
+├── backend/
 │   ├── src/
-│   │   ├── index.ts
-│   │   ├── app.ts
+│   │   ├── index.ts              ← server entry point (port 5000)
+│   │   ├── app.ts                ← Express app, static file serving
+│   │   ├── supabaseClient.ts     ← Supabase storage client
 │   │   └── routes/
-│   │       ├── index.ts
-│   │       ├── health.ts
-│   │       ├── perolehan.ts     ← POST /api/perolehan/analyze (SSE)
-│   │       └── generate-doc.ts  ← POST /api/perolehan/generate-doc (SSE)
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
+│   │       ├── perolehan.ts      ← POST /api/perolehan/analyze
+│   │       ├── generate-surat.ts ← POST /api/generate-surat (DOCX generation)
+│   │       └── pk29Engine.ts     ← PK 2.9 rule-based logic
+│   └── scripts/
+│       └── createTemplate.mjs    ← uploads .docx template to Supabase
 │
-└── frontend/       # Plain HTML/CSS/JS — no build step needed
+└── frontend/
     ├── index.html
     ├── style.css
-    └── app.js      ← set BACKEND_URL at top of this file
+    └── app.js
 ```
 
 ---
 
-## Quick Start
+## Environment Variables
 
-### 1 — Backend
+| Variable | Description | Required |
+|---|---|---|
+| `SUPABASE_URL` | Your Supabase project URL | Yes |
+| `SUPABASE_ANON_KEY` | Supabase anon/public API key | Yes |
+| `SUPABASE_BUCKET` | Storage bucket name (default: `templates`) | No |
+| `PORT` | Port to listen on (default: `5000`) | No |
+
+---
+
+## Supabase Setup
+
+The app uses **Supabase Storage** to host Word document templates. No SQL tables are needed.
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to **Storage** → **New bucket** → name it `templates` → set to **Public**
+3. Upload `dokumen-sebut-harga-template.docx` into the bucket
+4. Copy your **Project URL** and **anon/public key** from *Settings → API*
+
+To upload templates automatically using the script:
 
 ```bash
-cd backend
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_SERVICE_KEY=your-service-key \
+node backend/scripts/createTemplate.mjs
+```
 
-# Install dependencies
+---
+
+## Local Development
+
+```bash
+# Install dependencies (from project root)
 npm install
 
-# Configure environment
-cp .env.example .env
-# Edit .env: set your OPENAI_API_KEY and OPENAI_MODEL
-
-# Run dev server (port 3001 by default)
-npm run dev
+# Run the backend (also serves frontend on port 5000)
+npx tsx backend/src/index.ts
 ```
 
-#### `.env` values
-
-| Variable | Description | Example |
-|---|---|---|
-| `OPENAI_API_KEY` | Your OpenAI API key | `sk-proj-...` |
-| `OPENAI_MODEL` | Model to use | `gpt-4o-mini` |
-| `PORT` | Port to listen on | `3001` |
-
----
-
-### 2 — Frontend
-
-Open `frontend/index.html` directly in a browser, **or** serve it with any static file server:
+Set your environment variables before running (or use a `.env` file):
 
 ```bash
-cd frontend
-npx serve .
-# or: python3 -m http.server 8080
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_ANON_KEY=your-anon-key
 ```
 
-**Important:** Edit `BACKEND_URL` at the top of `frontend/app.js` to point to your running backend:
-
-```js
-const BACKEND_URL = "http://localhost:3001";
-```
-
-If your backend is on a different host/port, change this value accordingly.
+Open `http://localhost:5000` in your browser.
 
 ---
 
@@ -94,35 +118,77 @@ If your backend is on a different host/port, change this value accordingly.
 
 ---
 
+## Deploying to External Services
+
+The frontend and backend deploy together as a **single Node.js service**. The only external dependency is Supabase (already hosted).
+
+### Step 1 — Push code to GitHub
+
+Connect Replit to GitHub (Git tab in sidebar) or download as zip and push manually.
+
+### Step 2 — Choose a hosting platform
+
+#### Option A — Railway (Recommended)
+
+1. Go to [railway.app](https://railway.app) → *New Project → Deploy from GitHub repo*
+2. Select your repository
+3. Add environment variables in the Railway dashboard:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `PORT` = `5000`
+4. Railway auto-detects Node.js — no extra config needed
+5. Your app goes live at a `*.up.railway.app` URL
+
+#### Option B — Render
+
+1. Go to [render.com](https://render.com) → *New → Web Service → Connect GitHub repo*
+2. **Build Command:** `npm install`
+3. **Start Command:** `npx tsx backend/src/index.ts`
+4. Add the same environment variables as above
+5. Select the free plan
+
+#### Option C — Fly.io
+
+Requires a `Dockerfile`. Good for full control over the runtime environment.
+
+### Step 3 — Set environment variables on your chosen platform
+
+| Variable | Where to get it |
+|---|---|
+| `SUPABASE_URL` | Supabase → Settings → API → Project URL |
+| `SUPABASE_ANON_KEY` | Supabase → Settings → API → anon/public key |
+
+---
+
+## Note on ChromaDB
+
+ChromaDB (used for PK 2.9 document vector search) runs **in-memory** inside the backend process. It reloads automatically on startup. On free-tier hosting where the server sleeps and restarts, the first AI query after wake-up may take a few seconds while ChromaDB initialises.
+
+---
+
 ## API Endpoints
 
 ### `GET /api/healthz`
 Health check. Returns `{ "status": "ok" }`.
 
 ### `POST /api/perolehan/analyze`
-Streams AI guidance based on PK 2.9.
+Returns AI guidance based on PK 2.9 rules.
 
 **Request body:**
 ```json
 {
   "jenisPerolehan": "bekalan" | "perkhidmatan" | "kerja",
-  "jenisKerja": "...",  // required if jenisPerolehan = "kerja"
-  "hargaSiling": 75000  // number, positive
+  "jenisKerja": "...",
+  "hargaSiling": 75000
 }
 ```
 
-**Response:** `text/event-stream` (SSE)
-```
-data: {"content":"## Kaedah Perolehan\n..."}
-data: {"done":true}
-```
+### `POST /api/generate-surat`
+Generates a Sebut Harga DOCX document from the Supabase template.
 
-### `POST /api/perolehan/generate-doc`
-Streams a full draft sebut harga document.
+**Request:** `multipart/form-data` (supports PDF uploads for spec/price fields)
 
-**Request body:** same as `/analyze`
-
-**Response:** `text/event-stream` (SSE), same format.
+**Response:** `.docx` file download
 
 ---
 
@@ -138,12 +204,3 @@ Streams a full draft sebut harga document.
 | Kerja | > RM50k – RM200k | Sebut Harga (CIDB G1) |
 | Kerja | > RM200k – RM500k | Sebut Harga (CIDB G2) |
 | Kerja | > RM500k | Tender |
-
----
-
-## Deployment Notes
-
-- Set `OPENAI_API_KEY` as an environment variable — never commit it to git.
-- For production, add `CORS` origin restrictions in `backend/src/app.ts`.
-- The frontend can be hosted on any static host (Netlify, Vercel, GitHub Pages, etc.); just update `BACKEND_URL` to your production backend URL.
-- The backend can be deployed to Railway, Render, Fly.io, or any Node.js host.

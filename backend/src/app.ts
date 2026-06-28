@@ -15,9 +15,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 const frontendPath = path.join(__dirname, "../../frontend");
-app.use(express.static(frontendPath));
+app.use(express.static(frontendPath, {
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  },
+}));
 
 app.get("/{*splat}", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 

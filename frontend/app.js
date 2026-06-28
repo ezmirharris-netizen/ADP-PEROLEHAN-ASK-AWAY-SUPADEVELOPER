@@ -187,6 +187,9 @@ perolehanForm.addEventListener("submit", async (e) => {
     docFormError: "",
     docGenSuccess: false,
     docFormValues: null,
+    chatMessages: [],
+    chatStreaming: false,
+    showChat: true,
   };
   entries.unshift(entry);
   renderEntries();
@@ -443,7 +446,59 @@ function entryBodyHtml(entry) {
     }
   }
 
+  // Chat section — show after analysis completes
+  if (entry.aiAnalysis && !entry.errored && !entry.streaming) {
+    html += chatSectionHtml(entry);
+  }
+
   return html;
+}
+
+function chatSectionHtml(entry) {
+  const messagesHtml = entry.chatMessages.map((msg) => {
+    if (msg.role === "user") {
+      return `<div class="chat-msg chat-msg-user"><div class="chat-bubble chat-bubble-user">${escapeHtml(msg.content)}</div></div>`;
+    }
+    return `<div class="chat-msg chat-msg-ai"><div class="chat-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg></div><div class="chat-bubble chat-bubble-ai">${renderMarkdown(msg.content)}${msg.streaming ? '<span class="streaming-cursor"></span>' : ""}</div></div>`;
+  }).join("");
+
+  const isStreaming = entry.chatStreaming;
+
+  return `
+    <div class="chat-section" id="chat-${entry.id}">
+      <button class="chat-toggle" data-action="chat-toggle" data-id="${entry.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Tanya Soalan Susulan
+        <svg class="chat-toggle-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${entry.showChat ? '<polyline points="18 15 12 9 6 15"/>' : '<polyline points="6 9 12 15 18 9"/>'}</svg>
+      </button>
+
+      ${entry.showChat ? `
+        <div class="chat-body">
+          ${entry.chatMessages.length === 0 ? `
+            <div class="chat-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Tanya apa-apa soalan berkaitan analisis perolehan ini
+            </div>
+          ` : `<div class="chat-messages" id="chat-messages-${entry.id}">${messagesHtml}</div>`}
+
+          <div class="chat-input-row">
+            <textarea
+              class="chat-input"
+              id="chat-input-${entry.id}"
+              placeholder="Contoh: Berapa ramai pembekal yang perlu dijemput?"
+              rows="2"
+              ${isStreaming ? "disabled" : ""}
+              onkeydown="chatKeydown(event, ${entry.id})"
+            ></textarea>
+            <button class="chat-send-btn" data-action="chat-send" data-id="${entry.id}" ${isStreaming ? "disabled" : ""}>
+              ${isStreaming
+                ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>`
+                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`}
+            </button>
+          </div>
+        </div>
+      ` : ""}
+    </div>`;
 }
 
 function updateEntryBody(entry) {
@@ -490,6 +545,13 @@ entriesList.addEventListener("click", (e) => {
   } else if (btn.dataset.action === "sst-no") {
     entry.sstDismissed = true;
     renderEntries();
+  } else if (btn.dataset.action === "chat-toggle") {
+    entry.showChat = !entry.showChat;
+    updateEntryBody(entry);
+  } else if (btn.dataset.action === "chat-send") {
+    const input = document.getElementById(`chat-input-${id}`);
+    const question = input?.value?.trim();
+    if (question && !entry.chatStreaming) sendChatMessage(entry, question);
   } else if (btn.dataset.action === "doc-again") {
     entry.docGenSuccess = false;
     entry.showDocPrompt = true;
@@ -517,6 +579,73 @@ entriesList.addEventListener("click", (e) => {
     submitDocForm(entry, data, files);
   }
 });
+
+/* ---------- Chat ---------- */
+window.chatKeydown = function(e, entryId) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const entry = entries.find((x) => x.id === entryId);
+    const input = document.getElementById(`chat-input-${entryId}`);
+    const question = input?.value?.trim();
+    if (entry && question && !entry.chatStreaming) sendChatMessage(entry, question);
+  }
+};
+
+async function sendChatMessage(entry, question) {
+  entry.showChat = true;
+  entry.chatStreaming = true;
+
+  // Clear input
+  const inputEl = document.getElementById(`chat-input-${entry.id}`);
+  if (inputEl) inputEl.value = "";
+
+  // Add user message
+  entry.chatMessages.push({ role: "user", content: question });
+
+  // Add placeholder AI message (streaming)
+  const aiMsg = { role: "assistant", content: "", streaming: true };
+  entry.chatMessages.push(aiMsg);
+  updateEntryBody(entry);
+  scrollChatToBottom(entry.id);
+
+  try {
+    await streamFromBackend(
+      "/api/perolehan/chat",
+      {
+        situasi: entry.situasi,
+        hargaSiling: entry.hargaSilingNum,
+        messages: entry.chatMessages
+          .filter((m) => !m.streaming)
+          .slice(0, -1)
+          .map((m) => ({ role: m.role, content: m.content })),
+        question,
+      },
+      (chunk) => {
+        aiMsg.content += chunk;
+        updateEntryBody(entry);
+        scrollChatToBottom(entry.id);
+      },
+      () => {},
+      (errMsg) => {
+        aiMsg.content = `Ralat: ${errMsg}`;
+      }
+    );
+  } catch {
+    aiMsg.content = "Ralat: Tidak dapat menghubungi pelayan.";
+  } finally {
+    aiMsg.streaming = false;
+    entry.chatStreaming = false;
+    updateEntryBody(entry);
+    scrollChatToBottom(entry.id);
+  }
+}
+
+function scrollChatToBottom(entryId) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById(`chat-messages-${entryId}`);
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+}
 
 /* ---------- Document form ---------- */
 function openDocForm(entry, docType) {

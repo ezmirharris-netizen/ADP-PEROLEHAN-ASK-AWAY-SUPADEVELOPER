@@ -6,11 +6,6 @@ const BACKEND_URL = "";
 
 /* ---------- Document field configs per doc type ---------- */
 const DOC_FIELDS = {
-  "sebut-harga": [
-    { key: "nama",         label: "Nama Pegawai Pemohon",     type: "text",  placeholder: "Nama penuh pegawai" },
-    { key: "namaSyarikat", label: "Nama Jabatan / Agensi",    type: "text",  placeholder: "Contoh: Jabatan Kerja Raya Malaysia" },
-    { key: "tarikh",       label: "Tarikh",                   type: "date" },
-  ],
   "tawaran": [
     { key: "Tajuk",               label: "Tajuk Sebut Harga",             type: "text",  placeholder: "Contoh: Pembelian Komputer Riba", fullWidth: true },
     { key: "No_Siri",             label: "No. Siri",                      type: "text",  placeholder: "Contoh: 001" },
@@ -88,6 +83,24 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   sessionStorage.removeItem("userId");
   showLogin();
 });
+
+/* ---------- Sidebar navigation ---------- */
+const navItems = document.querySelectorAll(".nav-item");
+const pageAnalisis = document.getElementById("page-analisis");
+const pageRekod = document.getElementById("page-rekod");
+
+function showPage(name) {
+  navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.page === name));
+  pageAnalisis.classList.toggle("hidden", name !== "analisis");
+  pageRekod.classList.toggle("hidden", name !== "rekod");
+  if (name === "rekod") fetchRekod();
+}
+
+navItems.forEach((btn) => {
+  btn.addEventListener("click", () => showPage(btn.dataset.page));
+});
+
+document.getElementById("rekod-refresh-btn").addEventListener("click", fetchRekod);
 
 /* ---------- Perolehan form ---------- */
 const perolehanForm = document.getElementById("perolehan-form");
@@ -220,6 +233,20 @@ perolehanForm.addEventListener("submit", async (e) => {
     setLoading(false);
     if (entry.aiAnalysis && !entry.errored) {
       entry.showDocPrompt = true;
+      // Auto-save to persistent history
+      const userId = sessionStorage.getItem("userId") || "unknown";
+      fetch(`${BACKEND_URL}/api/rekod`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          situasi: entry.situasi,
+          hargaSilingNum: entry.hargaSilingNum,
+          hargaSilingFmt: entry.hargaSiling,
+          analisisAi: entry.aiAnalysis,
+          tarikh: entry.tarikhDihantar,
+        }),
+      }).catch((err) => console.warn("[rekod] Auto-save failed:", err.message));
     }
     renderEntries();
   }
@@ -339,16 +366,12 @@ function entryBodyHtml(entry) {
       <div class="doc-prompt-banner">
         <div class="doc-prompt-question">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>
-          Pilih dokumen yang ingin dijana:
+          Jana dokumen untuk perolehan ini?
         </div>
         <div class="doc-prompt-btns">
-          <button class="btn btn-doc-yes" data-action="doc-yes" data-doctype="sebut-harga" data-id="${entry.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-            Borang Sebut Harga
-          </button>
           <button class="btn btn-doc-yes btn-doc-tawaran" data-action="doc-yes" data-doctype="tawaran" data-id="${entry.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Kenyataan Tawaran
+            Borang Sebut Harga
           </button>
           <button class="btn btn-outline btn-sm" data-action="doc-no" data-id="${entry.id}">Tidak</button>
         </div>
@@ -356,17 +379,12 @@ function entryBodyHtml(entry) {
   }
 
   if (entry.showDocForm) {
-    const todayStr = new Date().toISOString().split("T")[0];
-    const isTawaran = entry.selectedDocType === "tawaran";
-    const formTitle = isTawaran ? "Kenyataan Tawaran Sebut Harga" : "Borang Sebut Harga";
-    const docFields = DOC_FIELDS[entry.selectedDocType ?? "sebut-harga"] ?? DOC_FIELDS["sebut-harga"];
+    const formTitle = "Kenyataan Tawaran Sebut Harga";
+    const docFields = DOC_FIELDS[entry.selectedDocType ?? "tawaran"] ?? DOC_FIELDS["tawaran"];
     let fieldsHtml = "";
     for (const field of docFields) {
       const inputId = `doc-field-${field.key}-${entry.id}`;
-      let defaultVal = "";
-      if (field.type === "date") defaultVal = todayStr;
-      if ((field.key === "tajuk" || field.key === "Tajuk") && entry.situasi) defaultVal = entry.situasi.slice(0, 100);
-      const savedVal = entry.docFormValues?.[field.key] ?? defaultVal;
+      const savedVal = entry.docFormValues?.[field.key] ?? "";
       const optional = field.required === false ? ' <span class="field-optional">(pilihan)</span>' : "";
       const isFile = field.type === "file";
       const savedFileName = isFile ? (entry.docFormValues?.[field.key + "__name"] ?? "") : "";
@@ -385,9 +403,9 @@ function entryBodyHtml(entry) {
             </div>`;
     }
     html += `
-      <div class="doc-form ${isTawaran ? "doc-form-tawaran" : ""}">
+      <div class="doc-form doc-form-tawaran">
         <div class="doc-form-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${isTawaran ? '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' : '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'}</svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Maklumat — ${formTitle}
         </div>
         <div class="doc-form-body">
@@ -407,9 +425,7 @@ function entryBodyHtml(entry) {
   }
 
   if (entry.docGenSuccess) {
-    const successLabel = entry.selectedDocType === "tawaran"
-      ? "Kenyataan Tawaran Sebut Harga"
-      : "Borang Sebut Harga";
+    const successLabel = "Kenyataan Tawaran Sebut Harga";
     html += `
       <div class="doc-success">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -417,7 +433,7 @@ function entryBodyHtml(entry) {
         <button class="btn btn-outline btn-sm" data-action="doc-again" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Jana Lagi</button>
       </div>`;
 
-    if (entry.selectedDocType === "tawaran" && !entry.sstDismissed) {
+    if (!entry.sstDismissed) {
       html += `
       <div class="sst-suggestion">
         <div class="sst-suggestion-left">
@@ -533,7 +549,7 @@ entriesList.addEventListener("click", (e) => {
   } else if (btn.dataset.action === "pdf") {
     exportToPdf(entry);
   } else if (btn.dataset.action === "doc-yes") {
-    openDocForm(entry, btn.dataset.doctype ?? "sebut-harga");
+    openDocForm(entry, btn.dataset.doctype ?? "tawaran");
   } else if (btn.dataset.action === "doc-no") {
     entry.showDocPrompt = false;
     entry.docDeclined = true;
@@ -562,8 +578,8 @@ entriesList.addEventListener("click", (e) => {
     entry.docFormError = "";
     renderEntries();
   } else if (btn.dataset.action === "doc-submit") {
-    const docType = entry.selectedDocType ?? "sebut-harga";
-    const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
+    const docType = entry.selectedDocType ?? "tawaran";
+    const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["tawaran"];
     const data = {};
     const files = {};
     for (const field of fields) {
@@ -651,15 +667,15 @@ function scrollChatToBottom(entryId) {
 function openDocForm(entry, docType) {
   entry.showDocPrompt = false;
   entry.showDocForm = true;
-  entry.selectedDocType = docType ?? "sebut-harga";
+  entry.selectedDocType = docType ?? "tawaran";
   entry.docFormError = "";
   entry.docFormSubmitting = false;
   renderEntries();
 }
 
 async function submitDocForm(entry, data, files = {}) {
-  const docType = entry.selectedDocType ?? "sebut-harga";
-  const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["sebut-harga"];
+  const docType = entry.selectedDocType ?? "tawaran";
+  const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["tawaran"];
   for (const field of fields) {
     if (field.required !== false && !data[field.key]) {
       entry.docFormError = `${field.label} diperlukan.`;
@@ -718,7 +734,7 @@ async function submitDocForm(entry, data, files = {}) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const label = entry.selectedDocType === "tawaran" ? "Tawaran_Sebut_Harga" : "Sebut_Harga";
+    const label = "Tawaran_Sebut_Harga";
     const pegawai = (data["Nama_Pegawai"] ?? data["nama_pegawai"] ?? data["nama"] ?? "dokumen").replace(/\s+/g, "_");
     a.download = `${label}_${pegawai}.docx`;
     document.body.appendChild(a);
@@ -734,6 +750,105 @@ async function submitDocForm(entry, data, files = {}) {
     entry.docFormError = err.message ?? "Ralat semasa menjana dokumen.";
     entry.docFormSubmitting = false;
     updateEntryBody(entry);
+  }
+}
+
+/* ---------- Rekod Perolehan page ---------- */
+let rekodOpenIds = new Set();
+
+async function fetchRekod() {
+  const userId = sessionStorage.getItem("userId") || "unknown";
+  const rekodList = document.getElementById("rekod-list");
+  rekodList.innerHTML = `<div class="rekod-loading">
+    <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>
+    Memuatkan rekod...
+  </div>`;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/rekod?userId=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    renderRekod(rows);
+  } catch (err) {
+    rekodList.innerHTML = `<div class="rekod-error">Gagal memuatkan rekod: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderRekod(rows) {
+  const rekodList = document.getElementById("rekod-list");
+  if (!rows || rows.length === 0) {
+    rekodList.innerHTML = `<div class="rekod-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>Tiada rekod perolehan lagi.<br>Mulakan analisis baharu di menu <strong>Analisis Perolehan</strong>.</p>
+    </div>`;
+    return;
+  }
+
+  rekodList.innerHTML = rows.map((row) => {
+    const isOpen = rekodOpenIds.has(row.id);
+    const situasiShort = (row.situasi || "").length > 120 ? row.situasi.slice(0, 120) + "…" : row.situasi;
+    return `<div class="rekod-card" data-rekod-id="${row.id}">
+      <div class="rekod-card-header">
+        <div class="rekod-card-meta">
+          <div class="rekod-card-situasi" title="${escapeHtml(row.situasi)}">${escapeHtml(situasiShort)}</div>
+          <div class="rekod-card-pills">
+            <span class="rekod-pill rekod-pill-green">RM ${escapeHtml(row.harga_siling_fmt)}</span>
+            <span class="rekod-pill rekod-pill-gray">${escapeHtml(row.tarikh)}</span>
+          </div>
+        </div>
+        <div class="rekod-card-actions">
+          <button class="btn btn-ghost btn-ghost-pdf btn-sm" onclick="exportRekodPdf(${row.id})" title="Muat Turun PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-ghost btn-ghost-danger btn-sm" onclick="deleteRekod(${row.id})" title="Padam">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleRekodBody(${row.id})" title="${isOpen ? 'Tutup' : 'Lihat Analisis'}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${isOpen ? '180deg' : '0deg'});transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+            ${isOpen ? "Tutup" : "Lihat"}
+          </button>
+        </div>
+      </div>
+      <div class="rekod-card-body ${isOpen ? 'open' : ''}">
+        <div class="rekod-ai-text">${renderMarkdown(row.analisis_ai || "")}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Store rows for PDF use
+  window._rekodRows = rows;
+}
+
+function toggleRekodBody(id) {
+  if (rekodOpenIds.has(id)) rekodOpenIds.delete(id);
+  else rekodOpenIds.add(id);
+  renderRekod(window._rekodRows || []);
+}
+
+function exportRekodPdf(id) {
+  const rows = window._rekodRows || [];
+  const row = rows.find((r) => r.id === id);
+  if (!row) return;
+  const entry = {
+    id: row.id,
+    situasi: row.situasi,
+    hargaSiling: row.harga_siling_fmt,
+    hargaSilingNum: parseFloat(row.harga_siling_num),
+    tarikhDihantar: row.tarikh,
+    aiAnalysis: row.analisis_ai,
+  };
+  exportToPdf(entry);
+}
+
+async function deleteRekod(id) {
+  if (!confirm("Padam rekod ini?")) return;
+  const userId = sessionStorage.getItem("userId") || "unknown";
+  try {
+    await fetch(`${BACKEND_URL}/api/rekod/${id}?userId=${encodeURIComponent(userId)}`, { method: "DELETE" });
+    rekodOpenIds.delete(id);
+    fetchRekod();
+  } catch (err) {
+    alert("Gagal memadam rekod.");
   }
 }
 

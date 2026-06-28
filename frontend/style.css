@@ -626,3 +626,184 @@ input:focus, select:focus {
 .chat-send-btn svg { width: 15px; height: 15px; }
 .chat-send-btn:hover:not(:disabled) { background: #312e81; }
 .chat-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* =============== Sidebar Layout =============== */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 57px);
+}
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 20px 12px;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+  overflow-y: auto;
+}
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #475569;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.3;
+}
+.nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+.nav-item:hover { background: #f1f5f9; color: #0f172a; }
+.nav-item.active {
+  background: rgba(30, 64, 175, 0.1);
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.app-main {
+  flex: 1;
+  padding: 28px 32px;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.page-content { max-width: 52rem; }
+
+/* =============== Rekod Perolehan Page =============== */
+.rekod-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+.rekod-page-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.rekod-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 14px;
+  padding: 32px 0;
+}
+.rekod-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: #94a3b8;
+}
+.rekod-empty svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: 0.4; }
+.rekod-empty p { font-size: 14px; }
+
+.rekod-card {
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.rekod-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.rekod-card-meta { flex: 1; min-width: 0; }
+.rekod-card-situasi {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rekod-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rekod-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(30, 64, 175, 0.08);
+  color: #1e40af;
+}
+.rekod-pill-green {
+  background: rgba(5, 150, 105, 0.08);
+  color: #059669;
+}
+.rekod-pill-gray {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.rekod-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.rekod-card-body {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.2s;
+}
+.rekod-card-body.open {
+  max-height: 600px;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+.rekod-ai-text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #1e293b;
+}
+.rekod-ai-text h3 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 12px 0 4px;
+  padding: 4px 8px;
+  background: #eff6ff;
+  border-left: 3px solid #93c5fd;
+  border-radius: 0 4px 4px 0;
+}
+.rekod-ai-text p { margin: 4px 0; }
+.rekod-ai-text ul, .rekod-ai-text ol { margin: 4px 0 4px 18px; padding: 0; }
+.rekod-ai-text li { margin-bottom: 2px; }
+.rekod-error {
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+

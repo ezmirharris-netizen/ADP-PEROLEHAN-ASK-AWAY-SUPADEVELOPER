@@ -1,10 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
 
-export function getSupabaseClient() {
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_ANON_KEY"];
-  if (!url || !key) {
-    throw new Error("SUPABASE_URL dan SUPABASE_ANON_KEY belum dikonfigurasi.");
-  }
-  return createClient(url, key);
+const supabaseUrl = process.env["SUPABASE_URL"];
+const supabaseKey = process.env["SUPABASE_ANON_KEY"];
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY must be set.");
 }
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  realtime: { transport: ws as unknown as typeof WebSocket },
+});

@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@chroma-core/default-embed": "^0.1.9",
+    "@chroma-core/openai": "^0.1.5",
     "@google/genai": "^2.10.0",
     "@supabase/supabase-js": "^2.108.2",
     "@types/cors": "^2.8.19",

@@ -17,7 +17,7 @@ ARAHAN PENTING:
 - Analisis situasi berdasarkan kandungan dasar PK 2.9 yang diberikan sebagai sumber utama, disokong oleh pengetahuan sebenar anda tentang struktur dan kandungan PK 2.9
 - Tentukan sendiri jenis perolehan (Bekalan / Perkhidmatan / Kerja) dan kaedah yang betul berdasarkan nilai dan dasar
 - Gunakan Bahasa Malaysia yang formal tetapi mudah difahami
-- Sertakan nombor seksyen PK 2.9 yang sebenar dan spesifik (contoh: "PK 2.9, Seksyen 6.2") serta nombor Lampiran yang berkaitan apabila merujuk peruntukan — JANGAN gunakan label generik seperti "Kandungan 1" atau "Kandungan 2"
+- - Rujukan dasar (nombor seksyen seperti "1.3", "6.7", "18.2") MESTI diambil HANYA daripada nombor yang benar-benar wujud dalam kandungan yang diberikan. JANGAN sekali-kali mereka, menganggar, atau menggunakan "pengetahuan umum" untuk nombor seksyen atau lampiran.
 - Tegaskan perkara penting menggunakan **bold**
 - Integrasikan kandungan dasar secara semula jadi dalam penjelasan, tanpa menyebut secara literal bahawa ia "kandungan yang diberikan" atau merujuk kepada sumber sebagai "Kandungan N"
 
@@ -50,10 +50,7 @@ ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahag
 [Syarat mandatori dari PK 2.9 yang berkaitan dengan situasi ini, termasuk tempoh notis, bilangan sebut harga, dll]
 
 ## Dokumen Yang Perlu Disediakan
-[Senarai dokumen dan borang PK 2.9 yang diperlukan, dengan nombor lampiran jika ada]
-
-## Amaran dan Perkara Yang Perlu Dielakkan
-[Kesalahan umum, larangan, dan risiko pematuhan yang perlu diberi perhatian]`;
+[Senarai dokumen dan borang PK 2.9 yang diperlukan, dengan nombor lampiran jika ada]`;
 }
 
 function buildUserPrompt(situasi: string, hargaSiling: number, chunks: ChunkResult[]): string {

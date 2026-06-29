@@ -2,7 +2,7 @@
    Sistem Perolehan — Frontend
    ===================================================== */
 
-const BACKEND_URL = "";
+const BACKEND_URL = "http://localhost:3001";
 
 /* ---------- Document field configs per doc type ---------- */
 const DOC_FIELDS = {

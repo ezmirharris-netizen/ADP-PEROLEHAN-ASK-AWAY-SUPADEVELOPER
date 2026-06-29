@@ -2,11 +2,12 @@ import { CloudClient } from "chromadb";
 import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
 
 let clientInstance: CloudClient | null = null;
+let collectionInstance: Awaited<ReturnType<CloudClient["getCollection"]>> | null = null;
+
 const embedFn = new OpenAIEmbeddingFunction({
   apiKey: process.env["OPENAI_API_KEY"]!,
   modelName: process.env["EMBEDDING_MODEL"] ?? "text-embedding-3-small",
 });
-
 
 function getClient(): CloudClient {
   if (!clientInstance) {
@@ -19,6 +20,17 @@ function getClient(): CloudClient {
   return clientInstance;
 }
 
+async function getCollection() {
+  if (collectionInstance) return collectionInstance;
+  const client = getClient();
+  const collectionName = process.env["CHROMA_COLLECTION"] ?? "pekeliling";
+  collectionInstance = await client.getCollection({
+    name: collectionName,
+    embeddingFunction: embedFn,
+  });
+  return collectionInstance;
+}
+
 export interface ChunkResult {
   document: string;
   metadata: Record<string, unknown>;
@@ -29,13 +41,7 @@ export async function queryPekeliling(
   queryText: string,
   nResults = 6
 ): Promise<ChunkResult[]> {
-  const client = getClient();
-  const collectionName = process.env["CHROMA_COLLECTION"] ?? "pekeliling";
-
-  const collection = await client.getCollection({
-    name: collectionName,
-    embeddingFunction: embedFn,
-  });
+  const collection = await getCollection();
 
   const results = await collection.query({
     queryTexts: [queryText],
@@ -55,34 +61,18 @@ export async function queryPekeliling(
     .filter((r) => r.document.trim().length > 0);
 }
 
-/**
- * Fetches EVERY chunk in the collection (not similarity search) and returns
- * them sorted by chunkIndex so they reassemble in original document order.
- * Used by /analyze for full, deterministic document coverage — same input
- * always sees the same complete context, instead of a similarity-matched
- * subset that can vary chunk-to-chunk between runs.
- *
- * Paginated in batches of 250 to stay under the Chroma Cloud quota limit
- * (observed cap: 300 items per get/query call).
- */
 let cachedAllChunks: ChunkResult[] | null = null;
 
 export async function getAllPekelilingChunks(forceRefresh = false): Promise<ChunkResult[]> {
   if (cachedAllChunks && !forceRefresh) return cachedAllChunks;
+  if (forceRefresh) collectionInstance = null;
 
-  const client = getClient();
-  const collectionName = process.env["CHROMA_COLLECTION"] ?? "pekeliling";
-
-  const collection = await client.getCollection({
-    name: collectionName,
-    embeddingFunction: embedFn,
-  });
+  const collection = await getCollection();
 
   const BATCH_SIZE = 250;
   const all: ChunkResult[] = [];
   let offset = 0;
 
-  // Keep paginating until a batch returns fewer than BATCH_SIZE results.
   for (;;) {
     const results = await collection.get({ limit: BATCH_SIZE, offset });
     const docs = results.documents ?? [];
@@ -103,8 +93,6 @@ export async function getAllPekelilingChunks(forceRefresh = false): Promise<Chun
     offset += BATCH_SIZE;
   }
 
-  // Sort by chunkIndex (falls back to 0 if missing) so chunks reassemble
-  // in the same order they appeared in the original document.
   all.sort((a, b) => {
     const aIdx = Number(a.metadata?.chunkIndex ?? 0);
     const bIdx = Number(b.metadata?.chunkIndex ?? 0);

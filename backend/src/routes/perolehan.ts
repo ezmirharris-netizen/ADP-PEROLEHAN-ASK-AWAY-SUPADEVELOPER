@@ -17,7 +17,7 @@ ARAHAN PENTING:
 - Analisis situasi berdasarkan kandungan dasar PK 2.9 yang diberikan sebagai sumber utama, disokong oleh pengetahuan sebenar anda tentang struktur dan kandungan PK 2.9
 - Tentukan sendiri jenis perolehan (Bekalan / Perkhidmatan / Kerja) dan kaedah yang betul berdasarkan nilai dan dasar
 - Gunakan Bahasa Malaysia yang formal tetapi mudah difahami
-- - Rujukan dasar (nombor seksyen seperti "1.3", "6.7", "18.2") MESTI diambil HANYA daripada nombor yang benar-benar wujud dalam kandungan yang diberikan. JANGAN sekali-kali mereka, menganggar, atau menggunakan "pengetahuan umum" untuk nombor seksyen atau lampiran.
+- Rujukan dasar (nombor seksyen seperti "1.3", "6.7", "18.2") MESTI diambil HANYA daripada nombor yang benar-benar wujud dalam kandungan yang diberikan. JANGAN sekali-kali mereka, menganggar, atau menggunakan "pengetahuan umum" untuk nombor seksyen atau lampiran.
 - Tegaskan perkara penting menggunakan **bold**
 - Integrasikan kandungan dasar secara semula jadi dalam penjelasan, tanpa menyebut secara literal bahawa ia "kandungan yang diberikan" atau merujuk kepada sumber sebagai "Kandungan N"
 
@@ -50,7 +50,10 @@ ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahag
 [Syarat mandatori dari PK 2.9 yang berkaitan dengan situasi ini, termasuk tempoh notis, bilangan sebut harga, dll]
 
 ## Dokumen Yang Perlu Disediakan
-[Senarai dokumen dan borang PK 2.9 yang diperlukan, dengan nombor lampiran jika ada]`;
+[Senarai dokumen dan borang PK 2.9 yang diperlukan, dengan nombor lampiran jika ada]
+
+## Amaran dan Perkara Yang Perlu Dielakkan
+[Senarai amaran dan kesilapan lazim yang perlu dielakkan berdasarkan PK 2.9]`;
 }
 
 function buildUserPrompt(situasi: string, hargaSiling: number, chunks: ChunkResult[]): string {
@@ -61,9 +64,7 @@ function buildUserPrompt(situasi: string, hargaSiling: number, chunks: ChunkResu
 
   const chunksText =
     chunks.length > 0
-      ? chunks
-          .map((c) => c.document.trim())
-          .join("\n\n---\n\n")
+      ? chunks.map((c) => c.document.trim()).join("\n\n---\n\n")
       : "Tiada petikan tambahan ditemui. Gunakan pengetahuan sebenar anda tentang struktur dan nombor seksyen PK 2.9.";
 
   return `Seorang pegawai kerajaan memerlukan panduan perolehan untuk situasi berikut:
@@ -111,7 +112,6 @@ router.post("/analyze", async (req, res) => {
       maximumFractionDigits: 2,
     });
 
-    // Query ChromaDB with multiple angles for richer policy coverage
     const queries = [
       situasi,
       `kaedah perolehan sebut harga RM ${hargaFormatted}`,
@@ -128,7 +128,6 @@ router.post("/analyze", async (req, res) => {
       )
     );
 
-    // Deduplicate chunks by document text
     const seen = new Set<string>();
     const chunks: ChunkResult[] = [];
     for (const set of chunkSets) {

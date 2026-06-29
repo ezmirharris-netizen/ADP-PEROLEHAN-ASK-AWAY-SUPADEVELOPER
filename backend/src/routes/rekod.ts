@@ -71,9 +71,14 @@ router.get("/rekod", async (req, res) => {
 
 /* DELETE /api/rekod/:id?userId=... — delete a record */
 router.delete("/rekod/:id", async (req, res) => {
-  const id = parseInt(req.params["id"], 10);
-  const userId = String(req.query["userId"] ?? "");
+  
+const id = parseInt(req.params["id"], 10);
+const userId = String(req.query["userId"] ?? "");
 
+if (!userId || isNaN(id)) {
+  res.status(400).json({ error: "id dan userId diperlukan." });
+  return;
+}
   const { error } = await supabase
     .from(TABLE)
     .delete()

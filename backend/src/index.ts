@@ -1,3 +1,9 @@
+const _warn = console.warn.bind(console);
+console.warn = (...a: unknown[]) => {
+  if (typeof a[0] === "string" && a[0].includes("DefaultEmbeddingFunction")) return;
+  _warn(...a);
+};
+
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";

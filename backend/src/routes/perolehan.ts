@@ -30,7 +30,7 @@ FORMAT DAN PENUTUP (WAJIB DIPATUHI):
 - Dokumen ini adalah laporan rasmi, BUKAN perbualan — jangan tulis seperti sedang berbual dengan pengguna
 - JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
 - JANGAN tambah bahagian tambahan selain 7 bahagian yang ditetapkan di bawah
-- Laporan MESTI tamat sebaik selesai bahagian "Amaran dan Perkara Yang Perlu Dielakkan" — tanpa ayat penutup tambahan selepas itu
+- Laporan MESTI tamat sebaik selesai bahagian "Dokumen Yang Perlu Disediakan" — tanpa ayat penutup tambahan selepas itu
 
 ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahagian):
 
@@ -52,8 +52,7 @@ ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahag
 ## Dokumen Yang Perlu Disediakan
 [Senarai dokumen dan borang PK 2.9 yang diperlukan, dengan nombor lampiran jika ada]
 
-## Amaran dan Perkara Yang Perlu Dielakkan
-[Senarai amaran dan kesilapan lazim yang perlu dielakkan berdasarkan PK 2.9]`;
+`;
 }
 
 function buildUserPrompt(situasi: string, hargaSiling: number, chunks: ChunkResult[]): string {

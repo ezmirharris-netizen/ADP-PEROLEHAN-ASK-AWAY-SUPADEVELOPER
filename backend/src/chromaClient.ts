@@ -3,11 +3,17 @@ import { OpenAIEmbeddingFunction } from "@chroma-core/openai";
 
 let clientInstance: CloudClient | null = null;
 let collectionInstance: Awaited<ReturnType<CloudClient["getCollection"]>> | null = null;
+let embedFnInstance: OpenAIEmbeddingFunction | null = null;
 
-const embedFn = new OpenAIEmbeddingFunction({
-  apiKey: process.env["OPENAI_API_KEY"]!,
-  modelName: process.env["EMBEDDING_MODEL"] ?? "text-embedding-3-small",
-});
+function getEmbedFn(): OpenAIEmbeddingFunction {
+  if (!embedFnInstance) {
+    embedFnInstance = new OpenAIEmbeddingFunction({
+      apiKey: process.env["OPENAI_API_KEY"]!,
+      modelName: process.env["EMBEDDING_MODEL"] ?? "text-embedding-3-small",
+    });
+  }
+  return embedFnInstance;
+}
 
 function getClient(): CloudClient {
   if (!clientInstance) {
@@ -26,7 +32,7 @@ async function getCollection() {
   const collectionName = process.env["CHROMA_COLLECTION"] ?? "pekeliling";
   collectionInstance = await client.getCollection({
     name: collectionName,
-    embeddingFunction: embedFn,
+    embeddingFunction: getEmbedFn(),
   });
   return collectionInstance;
 }

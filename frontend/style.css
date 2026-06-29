@@ -1318,3 +1318,219 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 .rekod-page .page-header {
   margin-bottom: 24px;
 }
+
+/* =====================================================
+   REKOD PAGINATION
+   ===================================================== */
+.rekod-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 0 4px;
+  flex-wrap: wrap;
+}
+
+.rekod-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rekod-page-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.rekod-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rekod-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rekod-page-num {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.rekod-page-num:hover:not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.rekod-page-num.active {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+  font-weight: 700;
+  cursor: default;
+}
+
+.rekod-page-info {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.rekod-pagination-info {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 12px 0 4px;
+}
+
+/* =====================================================
+   SST FORM — Conditional Sections
+   ===================================================== */
+.doc-form-sst {
+  border-top: 2px solid #7c3aed22;
+}
+.doc-form-sst .doc-form-header {
+  background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+}
+
+.sst-conditional-section {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+.sst-conditional-open {
+  border-color: #a5b4fc;
+  background: #f5f3ff;
+}
+.sst-conditional-skipped {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  opacity: 0.8;
+}
+
+.sst-conditional-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+
+.sst-conditional-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.sst-conditional-title-yes {
+  color: #15803d;
+}
+.sst-conditional-title-yes svg { stroke: #15803d; }
+.sst-conditional-title-no {
+  color: #64748b;
+}
+.sst-conditional-title-no svg { stroke: #94a3b8; }
+
+.sst-conditional-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sst-cond-yes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-sst-cond-yes:hover { background: #15803d; }
+
+.btn-sst-cond-no {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-sst-cond-no:hover { background: #e2e8f0; color: #334155; }
+
+.btn-sst-cond-change {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: #fff;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-sst-cond-change:hover { background: #f1f5f9; }
+
+.sst-conditional-section .doc-form-grid {
+  padding: 0 16px 14px;
+}
+
+.sst-pending-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 4px 0 0;
+}
+
+.sst-gen-success {
+  border-color: #a5b4fc;
+  background: linear-gradient(to right, #f5f3ff, #eff6ff);
+}
+
+.btn-sst-yes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-sst-yes:hover { opacity: 0.88; }

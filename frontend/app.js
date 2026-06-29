@@ -2,7 +2,9 @@
    Sistem Perolehan — Frontend
    ===================================================== */
 
-const BACKEND_URL = "http://localhost:3001";
+const BACKEND_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:3001" 
+  : window.location.origin;
 
 /* ---------- Document field configs per doc type ---------- */
 const DOC_FIELDS = {

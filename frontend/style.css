@@ -1425,6 +1425,11 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
   border-radius: 10px;
   margin: 12px 0;
   overflow: hidden;
+  animation: sst-section-in 0.18s ease;
+}
+@keyframes sst-section-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .sst-conditional-open {
   border-color: #a5b4fc;

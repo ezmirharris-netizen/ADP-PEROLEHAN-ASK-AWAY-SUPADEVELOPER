@@ -466,7 +466,7 @@ function entryBodyHtml(entry) {
   }
 
   if (entry.showDocForm) {
-    const formTitle = "Kenyataan Tawaran Sebut Harga";
+    const formTitle = "Borang Sebut Harga";
     const docFields = DOC_FIELDS[entry.selectedDocType ?? "tawaran"] ?? DOC_FIELDS["tawaran"];
     let fieldsHtml = "";
     for (const field of docFields) {
@@ -519,12 +519,12 @@ function entryBodyHtml(entry) {
   }
 
   if (entry.docGenSuccess) {
-    const successLabel = "Kenyataan Tawaran Sebut Harga";
+    const successLabel = "Borang Sebut Harga";
     html += `
       <div class="doc-success">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <span><strong>${successLabel}</strong> berjaya dijana dan dimuat turun.</span>
-        <button class="btn btn-outline btn-sm" data-action="doc-again" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Jana Lagi</button>
+        <button class="btn btn-outline btn-sm" data-action="doc-edit" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Ubahsuai</button>
       </div>`;
 
     if (!entry.sstDismissed) {
@@ -583,7 +583,7 @@ function sstFieldsHtml(fields, entryId, savedValues) {
   return html;
 }
 
-function sstFormHtml(entry) {
+function sstFormBodyHtml(entry) {
   const id = entry.id;
   const saved = entry.sstFormValues ?? {};
   const disabled = entry.sstFormSubmitting ? "disabled" : "";
@@ -624,7 +624,7 @@ function sstFormHtml(entry) {
         <div class="sst-conditional-header">
           <div class="sst-conditional-title sst-conditional-title-no">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            Sekiranya Berdaftar — Ditinggalkan
+            Tidak Berdaftar dengan Kementerian/Jabatan
           </div>
           <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berdaftar-yes" data-id="${id}" ${disabled}>Tukar ke Ya</button>
         </div>
@@ -665,7 +665,7 @@ function sstFormHtml(entry) {
         <div class="sst-conditional-header">
           <div class="sst-conditional-title sst-conditional-title-no">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            Sekiranya Berkaitan — Ditinggalkan
+            Tidak Berkaitan dengan Cidbid/PAKK
           </div>
           <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berkaitan-yes" data-id="${id}" ${disabled}>Tukar ke Ya</button>
         </div>
@@ -674,6 +674,26 @@ function sstFormHtml(entry) {
 
   const canSubmit = entry.sstBerdaftar !== null && entry.sstBerkaitan !== null;
 
+  return `
+    <div class="doc-form-grid">${baseFieldsHtml}</div>
+    ${berdaftarHtml}
+    ${berkaitanHtml}
+    ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
+    <div class="doc-form-actions">
+      <button class="btn btn-outline btn-sm" data-action="sst-cancel" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""}>Batal</button>
+      <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
+        ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
+        title="${!canSubmit ? "Sila jawab soalan Sekiranya Berdaftar dan Sekiranya Berkaitan dahulu" : ""}">
+        ${entry.sstFormSubmitting
+          ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
+      </button>
+    </div>
+    ${!canSubmit ? `<p class="sst-pending-hint">Sila jawab soalan di atas (Sekiranya Berdaftar &amp; Sekiranya Berkaitan) sebelum menjana dokumen.</p>` : ""}`;
+}
+
+function sstFormHtml(entry) {
+  const id = entry.id;
   return `
     <div class="doc-form-modal-overlay" data-action="sst-overlay-close" data-id="${id}">
       <div class="doc-form-modal" data-stop-close>
@@ -685,26 +705,21 @@ function sstFormHtml(entry) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-          <div class="doc-form-body">
-            <div class="doc-form-grid">${baseFieldsHtml}</div>
-            ${berdaftarHtml}
-            ${berkaitanHtml}
-            ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
-            <div class="doc-form-actions">
-              <button class="btn btn-outline btn-sm" data-action="sst-cancel" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""}>Batal</button>
-              <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
-                ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
-                title="${!canSubmit ? "Sila jawab soalan Sekiranya Berdaftar dan Sekiranya Berkaitan dahulu" : ""}">
-                ${entry.sstFormSubmitting
-                  ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
-                  : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
-              </button>
-            </div>
-            ${!canSubmit ? `<p class="sst-pending-hint">Sila jawab soalan di atas (Sekiranya Berdaftar &amp; Sekiranya Berkaitan) sebelum menjana dokumen.</p>` : ""}
-          </div>
+          <div class="doc-form-body" data-sst-body="${id}">${sstFormBodyHtml(entry)}</div>
         </div>
       </div>
     </div>`;
+}
+
+/* Update only the contents inside the SST modal (not the modal/overlay element itself),
+   so the scroll position and the rest of the page never get touched — no "refresh" feeling. */
+function updateSstFormBody(entry) {
+  const el = entriesList.querySelector(`[data-sst-body="${entry.id}"]`);
+  if (el) {
+    el.innerHTML = sstFormBodyHtml(entry);
+    return true;
+  }
+  return false;
 }
 
 function chatSectionHtml(entry) {
@@ -756,7 +771,34 @@ function chatSectionHtml(entry) {
 
 function updateEntryBody(entry) {
   const el = entriesList.querySelector(`[data-body="${entry.id}"]`);
-  if (el) el.innerHTML = entryBodyHtml(entry);
+  if (!el) return;
+
+  // Preserve scroll position of any open modal so re-rendering doesn't jump back to the top
+  const prevModal = el.querySelector(".doc-form-modal");
+  const prevScrollTop = prevModal ? prevModal.scrollTop : null;
+
+  // Preserve focus + cursor position so typing/selecting doesn't feel like a full refresh
+  const active = document.activeElement;
+  const activeId = el.contains(active) ? active.id : null;
+  const selectionStart = activeId && "selectionStart" in active ? active.selectionStart : null;
+  const selectionEnd = activeId && "selectionEnd" in active ? active.selectionEnd : null;
+
+  el.innerHTML = entryBodyHtml(entry);
+
+  if (prevScrollTop !== null) {
+    const newModal = el.querySelector(".doc-form-modal");
+    if (newModal) newModal.scrollTop = prevScrollTop;
+  }
+
+  if (activeId) {
+    const newActive = document.getElementById(activeId);
+    if (newActive) {
+      newActive.focus();
+      if (selectionStart !== null && "setSelectionRange" in newActive) {
+        try { newActive.setSelectionRange(selectionStart, selectionEnd); } catch {}
+      }
+    }
+  }
 }
 
 function renderEntries() {
@@ -853,19 +895,19 @@ entriesList.addEventListener("click", (e) => {
   } else if (btn.dataset.action === "sst-berdaftar-yes") {
     saveSstFieldValues(entry);
     entry.sstBerdaftar = true;
-    updateEntryBody(entry);
+    if (!updateSstFormBody(entry)) updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-berdaftar-no") {
     saveSstFieldValues(entry);
     entry.sstBerdaftar = false;
-    updateEntryBody(entry);
+    if (!updateSstFormBody(entry)) updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-berkaitan-yes") {
     saveSstFieldValues(entry);
     entry.sstBerkaitan = true;
-    updateEntryBody(entry);
+    if (!updateSstFormBody(entry)) updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-berkaitan-no") {
     saveSstFieldValues(entry);
     entry.sstBerkaitan = false;
-    updateEntryBody(entry);
+    if (!updateSstFormBody(entry)) updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-submit") {
     if (entry.sstBerdaftar !== null && entry.sstBerkaitan !== null) {
       saveSstFieldValues(entry);
@@ -890,13 +932,17 @@ entriesList.addEventListener("click", (e) => {
     const input = document.getElementById(`chat-input-${id}`);
     const question = input?.value?.trim();
     if (question && !entry.chatStreaming) sendChatMessage(entry, question);
-  } else if (btn.dataset.action === "doc-again") {
+  } else if (btn.dataset.action === "doc-edit") {
     entry.docGenSuccess = false;
-    entry.showDocPrompt = true;
+    entry.showDocPrompt = false;
+    entry.showDocForm = true;
+    entry.docFormError = "";
+    entry.docFormSubmitting = false;
     renderEntries();
   } else if (btn.dataset.action === "doc-cancel") {
     entry.showDocForm = false;
-    entry.showDocPrompt = true;
+    entry.showDocPrompt = !entry.docHasGenerated;
+    entry.docGenSuccess = !!entry.docHasGenerated;
     entry.docFormError = "";
     renderEntries();
   } else if (btn.dataset.action === "doc-submit") {
@@ -907,7 +953,9 @@ entriesList.addEventListener("click", (e) => {
     for (const field of fields) {
       const el = document.getElementById(`doc-field-${field.key}-${id}`);
       if (field.type === "file") {
-        const file = el?.files?.[0] ?? null;
+        const newFile = el?.files?.[0] ?? null;
+        // If no new file was chosen this time, reuse the one kept from a previous submission (editing case)
+        const file = newFile ?? entry.docFiles?.[field.key] ?? null;
         files[field.key] = file;
         data[field.key] = file?.name ?? "";
       } else {
@@ -1008,6 +1056,7 @@ async function submitDocForm(entry, data, files = {}) {
   }
 
   entry.docFormValues = data;
+  entry.docFiles = files;
   entry.docFormSubmitting = true;
   entry.docFormError = "";
   setTracker("borang", "active");
@@ -1067,11 +1116,14 @@ async function submitDocForm(entry, data, files = {}) {
 
     entry.showDocForm = false;
     entry.docGenSuccess = true;
+    entry.docHasGenerated = true;
     entry.docFormSubmitting = false;
     setTracker("borang", "done");
     renderEntries();
   } catch (err) {
-    entry.docFormError = err.message ?? "Ralat semasa menjana dokumen.";
+    entry.docFormError = err instanceof TypeError
+      ? "Tidak dapat menghubungi pelayan. Sila semak sambungan internet anda, atau cuba dengan fail yang lebih kecil, dan cuba lagi."
+      : (err.message ?? "Ralat semasa menjana dokumen.");
     entry.docFormSubmitting = false;
     setTracker("borang", "pending");
     updateEntryBody(entry);
@@ -1494,6 +1546,10 @@ document.addEventListener("DOMContentLoaded", function initAiContextMenu() {
     const entry = entries.find((x) => x.id === activeEntryId);
     if (!entry) { hideMenu(); return; }
 
+    // Capture the quoted text now — hideMenu() below clears `selectedText`,
+    // and the requestAnimationFrame callback runs after that.
+    const quotedText = selectedText;
+
     // Expand chat if collapsed
     entry.showChat = true;
     updateEntryBody(entry);
@@ -1504,7 +1560,7 @@ document.addEventListener("DOMContentLoaded", function initAiContextMenu() {
       if (chatEl) chatEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
       // Build a clear question referencing the selected snippet
-      const question = `Mengenai petikan ini daripada analisis:\n"${selectedText}"\n\nBoleh terangkan dengan lebih lanjut?`;
+      const question = `Mengenai petikan ini daripada analisis:\n"${quotedText}"\n\nBoleh terangkan dengan lebih lanjut?`;
 
       if (!entry.chatStreaming) {
         sendChatMessage(entry, question);

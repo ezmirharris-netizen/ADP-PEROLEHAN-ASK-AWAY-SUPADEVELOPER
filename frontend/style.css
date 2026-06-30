@@ -856,17 +856,17 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 .doc-form-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 9px;
+  padding: 14px 18px;
   background: linear-gradient(to right, #eff6ff, #f0f7ff);
   border-bottom: 1px solid #bfdbfe;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: #1e40af;
 }
-.doc-form-header svg { width: 14px; height: 14px; color: #3b82f6; }
+.doc-form-header svg { width: 15px; height: 15px; color: #3b82f6; flex-shrink: 0; }
 
 .doc-form-tawaran { border-color: #ddd6fe; }
 .doc-form-tawaran .doc-form-header {
@@ -1409,6 +1409,15 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 }
 .doc-form-sst .doc-form-header {
   background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+  color: #ffffff;
+}
+.doc-form-sst .doc-form-header svg { color: #ffffff; }
+.doc-form-modal .doc-form-sst .doc-form-modal-close {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+}
+.doc-form-modal .doc-form-sst .doc-form-modal-close:hover:not(:disabled) {
+  background: rgba(255,255,255,0.3);
 }
 
 .sst-conditional-section {
@@ -1824,4 +1833,77 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
     grid-template-columns: 1fr;
   }
   .analisis-right { position: static; }
+}
+
+/* ---------- Doc Form Modal (Borang Sebut Harga popup) ---------- */
+.doc-form-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  z-index: 1000;
+  animation: doc-modal-fade-in 0.15s ease;
+}
+@keyframes doc-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.doc-form-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  animation: doc-modal-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes doc-modal-pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.doc-form-modal .doc-form {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.doc-form-modal .doc-form-header {
+  position: relative;
+  padding-right: 52px;
+}
+
+.doc-form-modal .doc-form-body { padding: 20px 20px 18px; }
+
+.doc-form-modal-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: none;
+  background: rgba(255,255,255,0.6);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.doc-form-modal-close svg { width: 15px; height: 15px; }
+.doc-form-modal-close:hover:not(:disabled) { background: rgba(255,255,255,0.9); }
+.doc-form-modal-close:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@media (max-width: 520px) {
+  .doc-form-modal-overlay { padding: 12px; align-items: flex-end; }
+  .doc-form-modal { max-height: 92vh; border-radius: 16px 16px 0 0; }
 }

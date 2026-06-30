@@ -490,22 +490,29 @@ function entryBodyHtml(entry) {
             </div>`;
     }
     html += `
-      <div class="doc-form doc-form-tawaran">
-        <div class="doc-form-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Maklumat — ${formTitle}
-        </div>
-        <div class="doc-form-body">
-          <div class="doc-form-grid">${fieldsHtml}
-          </div>
-          ${entry.docFormError ? `<div class="doc-form-error">${escapeHtml(entry.docFormError)}</div>` : ""}
-          <div class="doc-form-actions">
-            <button class="btn btn-outline btn-sm" data-action="doc-cancel" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>Batal</button>
-            <button class="btn btn-doc-submit" data-action="doc-submit" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>
-              ${entry.docFormSubmitting
-                ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
-                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
-            </button>
+      <div class="doc-form-modal-overlay" data-action="doc-overlay-close" data-id="${entry.id}">
+        <div class="doc-form-modal" data-stop-close>
+          <div class="doc-form doc-form-tawaran">
+            <div class="doc-form-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Maklumat — ${formTitle}
+              <button class="doc-form-modal-close" data-action="doc-cancel" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""} aria-label="Tutup">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="doc-form-body">
+              <div class="doc-form-grid">${fieldsHtml}
+              </div>
+              ${entry.docFormError ? `<div class="doc-form-error">${escapeHtml(entry.docFormError)}</div>` : ""}
+              <div class="doc-form-actions">
+                <button class="btn btn-outline btn-sm" data-action="doc-cancel" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>Batal</button>
+                <button class="btn btn-doc-submit" data-action="doc-submit" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>
+                  ${entry.docFormSubmitting
+                    ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>`;
@@ -668,26 +675,34 @@ function sstFormHtml(entry) {
   const canSubmit = entry.sstBerdaftar !== null && entry.sstBerkaitan !== null;
 
   return `
-    <div class="doc-form doc-form-sst">
-      <div class="doc-form-header">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Maklumat — Surat Setuju Terima
-      </div>
-      <div class="doc-form-body">
-        <div class="doc-form-grid">${baseFieldsHtml}</div>
-        ${berdaftarHtml}
-        ${berkaitanHtml}
-        ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
-        <div class="doc-form-actions">
-          <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
-            ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
-            title="${!canSubmit ? "Sila jawab soalan Sekiranya Berdaftar dan Sekiranya Berkaitan dahulu" : ""}">
-            ${entry.sstFormSubmitting
-              ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
-              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
-          </button>
+    <div class="doc-form-modal-overlay" data-action="sst-overlay-close" data-id="${id}">
+      <div class="doc-form-modal" data-stop-close>
+        <div class="doc-form doc-form-sst">
+          <div class="doc-form-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Maklumat — Surat Setuju Terima
+            <button class="doc-form-modal-close" data-action="sst-cancel" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""} aria-label="Tutup">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="doc-form-body">
+            <div class="doc-form-grid">${baseFieldsHtml}</div>
+            ${berdaftarHtml}
+            ${berkaitanHtml}
+            ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
+            <div class="doc-form-actions">
+              <button class="btn btn-outline btn-sm" data-action="sst-cancel" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""}>Batal</button>
+              <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
+                ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
+                title="${!canSubmit ? "Sila jawab soalan Sekiranya Berdaftar dan Sekiranya Berkaitan dahulu" : ""}">
+                ${entry.sstFormSubmitting
+                  ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
+                  : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
+              </button>
+            </div>
+            ${!canSubmit ? `<p class="sst-pending-hint">Sila jawab soalan di atas (Sekiranya Berdaftar &amp; Sekiranya Berkaitan) sebelum menjana dokumen.</p>` : ""}
+          </div>
         </div>
-        ${!canSubmit ? `<p class="sst-pending-hint">Sila jawab soalan di atas (Sekiranya Berdaftar &amp; Sekiranya Berkaitan) sebelum menjana dokumen.</p>` : ""}
       </div>
     </div>`;
 }
@@ -756,6 +771,53 @@ function renderEntries() {
 }
 
 entriesList.addEventListener("click", (e) => {
+  // Close the doc form modal when clicking the backdrop (outside the modal card)
+  if (e.target.dataset.action === "doc-overlay-close" && e.target.classList.contains("doc-form-modal-overlay")) {
+    const id = parseInt(e.target.dataset.id, 10);
+    const entry = entries.find((x) => x.id === id);
+    if (entry && !entry.docFormSubmitting) {
+      entry.showDocForm = false;
+      entry.showDocPrompt = true;
+      entry.docFormError = "";
+      renderEntries();
+    }
+    return;
+  }
+
+  // Close the SST form modal when clicking the backdrop (outside the modal card)
+  if (e.target.dataset.action === "sst-overlay-close" && e.target.classList.contains("doc-form-modal-overlay")) {
+    const id = parseInt(e.target.dataset.id, 10);
+    const entry = entries.find((x) => x.id === id);
+    if (entry && !entry.sstFormSubmitting) {
+      entry.sstAccepted = false;
+      entry.sstDismissed = false;
+      entry.sstFormError = "";
+      updateEntryBody(entry);
+    }
+    return;
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const openDocEntry = entries.find((x) => x.showDocForm);
+  if (openDocEntry && !openDocEntry.docFormSubmitting) {
+    openDocEntry.showDocForm = false;
+    openDocEntry.showDocPrompt = true;
+    openDocEntry.docFormError = "";
+    renderEntries();
+    return;
+  }
+  const openSstEntry = entries.find((x) => x.sstAccepted && !x.sstGenSuccess);
+  if (openSstEntry && !openSstEntry.sstFormSubmitting) {
+    openSstEntry.sstAccepted = false;
+    openSstEntry.sstDismissed = false;
+    openSstEntry.sstFormError = "";
+    updateEntryBody(openSstEntry);
+  }
+});
+
+entriesList.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
   const id = parseInt(btn.dataset.id, 10);
@@ -809,6 +871,11 @@ entriesList.addEventListener("click", (e) => {
       saveSstFieldValues(entry);
       submitSstForm(entry);
     }
+  } else if (btn.dataset.action === "sst-cancel") {
+    entry.sstAccepted = false;
+    entry.sstDismissed = false;
+    entry.sstFormError = "";
+    updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-again") {
     entry.sstGenSuccess = false;
     entry.sstBerdaftar = null;
@@ -1427,25 +1494,20 @@ document.addEventListener("DOMContentLoaded", function initAiContextMenu() {
     const entry = entries.find((x) => x.id === activeEntryId);
     if (!entry) { hideMenu(); return; }
 
-    // Capture these now — hideMenu() below will reset the shared variables
-    // before the requestAnimationFrame callback below gets a chance to run
-    const capturedText = selectedText;
-    const capturedEntry = entry;
-
     // Expand chat if collapsed
-    capturedEntry.showChat = true;
-    updateEntryBody(capturedEntry);
+    entry.showChat = true;
+    updateEntryBody(entry);
 
     // Scroll chat into view then send
     requestAnimationFrame(() => {
-      const chatEl = document.getElementById(`chat-${capturedEntry.id}`);
+      const chatEl = document.getElementById(`chat-${entry.id}`);
       if (chatEl) chatEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
       // Build a clear question referencing the selected snippet
-      const question = `Mengenai petikan ini daripada analisis:\n"${capturedText}"\n\nBoleh terangkan dengan lebih lanjut?`;
+      const question = `Mengenai petikan ini daripada analisis:\n"${selectedText}"\n\nBoleh terangkan dengan lebih lanjut?`;
 
-      if (!capturedEntry.chatStreaming) {
-        sendChatMessage(capturedEntry, question);
+      if (!entry.chatStreaming) {
+        sendChatMessage(entry, question);
       }
     });
 

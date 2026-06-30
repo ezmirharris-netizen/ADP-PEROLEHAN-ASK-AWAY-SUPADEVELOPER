@@ -121,6 +121,44 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   showLogin();
 });
 
+/* ---------- Status Tracker ---------- */
+const TRACKER_STEPS = [
+  { id: "analisis", label: "Analisis AI", sub: { pending: "Belum dimulakan", active: "Sedang menganalisis...", done: "Analisis selesai" } },
+  { id: "borang",   label: "Borang Sebut Harga", sub: { pending: "Menunggu analisis", active: "Menjana dokumen...", done: "Dokumen dijana" } },
+  { id: "sst",      label: "Surat Setuju Terima", sub: { pending: "Menunggu borang", active: "Menjana SST...", done: "SST dijana" } },
+];
+
+let trackerState = { analisis: "pending", borang: "pending", sst: "pending" };
+
+function setTracker(stepId, status) {
+  trackerState[stepId] = status;
+  renderTracker();
+}
+
+function renderTracker() {
+  const el = document.getElementById("tracker-steps");
+  if (!el) return;
+  el.innerHTML = TRACKER_STEPS.map((step, i) => {
+    const st = trackerState[step.id];
+    const icon = st === "done"   ? "✓"
+               : st === "active" ? `<span class="tracker-dot-pulse"></span>⏳`
+               : `${i + 1}`;
+    const subText = step.sub[st] || "";
+    return `
+      <div class="tracker-step ts-${st}">
+        <div class="tracker-step-connector">
+          <div class="tracker-dot">${icon}</div>
+        </div>
+        <div class="tracker-body">
+          <div class="tracker-label">${step.label}</div>
+          <div class="tracker-sub">${subText}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+renderTracker();
+
 /* ---------- Sidebar navigation ---------- */
 const navItems = document.querySelectorAll(".nav-item");
 const pageAnalisis = document.getElementById("page-analisis");
@@ -251,6 +289,9 @@ perolehanForm.addEventListener("submit", async (e) => {
   renderEntries();
   perolehanForm.reset();
   setLoading(true);
+  setTracker("analisis", "active");
+  setTracker("borang", "pending");
+  setTracker("sst", "pending");
 
   try {
     await streamFromBackend(
@@ -276,6 +317,7 @@ perolehanForm.addEventListener("submit", async (e) => {
     setLoading(false);
     if (entry.aiAnalysis && !entry.errored) {
       entry.showDocPrompt = true;
+      setTracker("analisis", "done");
       // Auto-save to persistent history
       const userId = sessionStorage.getItem("userId") || "unknown";
       fetch(`${BACKEND_URL}/api/rekod`, {
@@ -290,6 +332,8 @@ perolehanForm.addEventListener("submit", async (e) => {
           tarikh: entry.tarikhDihantar,
         }),
       }).catch((err) => console.warn("[rekod] Auto-save failed:", err.message));
+    } else if (entry.errored) {
+      setTracker("analisis", "pending");
     }
     renderEntries();
   }
@@ -899,6 +943,7 @@ async function submitDocForm(entry, data, files = {}) {
   entry.docFormValues = data;
   entry.docFormSubmitting = true;
   entry.docFormError = "";
+  setTracker("borang", "active");
   updateEntryBody(entry);
 
   try {
@@ -956,10 +1001,12 @@ async function submitDocForm(entry, data, files = {}) {
     entry.showDocForm = false;
     entry.docGenSuccess = true;
     entry.docFormSubmitting = false;
+    setTracker("borang", "done");
     renderEntries();
   } catch (err) {
     entry.docFormError = err.message ?? "Ralat semasa menjana dokumen.";
     entry.docFormSubmitting = false;
+    setTracker("borang", "pending");
     updateEntryBody(entry);
   }
 }
@@ -983,6 +1030,7 @@ function saveSstFieldValues(entry) {
 async function submitSstForm(entry) {
   entry.sstFormSubmitting = true;
   entry.sstFormError = "";
+  setTracker("sst", "active");
   updateEntryBody(entry);
 
   const saved = entry.sstFormValues ?? {};
@@ -1020,10 +1068,12 @@ async function submitSstForm(entry) {
 
     entry.sstGenSuccess = true;
     entry.sstFormSubmitting = false;
+    setTracker("sst", "done");
     updateEntryBody(entry);
   } catch (err) {
     entry.sstFormError = err.message ?? "Ralat semasa menjana Surat Setuju Terima.";
     entry.sstFormSubmitting = false;
+    setTracker("sst", "pending");
     updateEntryBody(entry);
   }
 }

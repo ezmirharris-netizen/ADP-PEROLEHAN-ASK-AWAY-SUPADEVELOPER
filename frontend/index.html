@@ -17,7 +17,7 @@
     <div class="login-container">
       <div class="login-brand">
         <div class="login-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <img src="assets/logo-perolehan.png" alt="Logo Sistem Perolehan" />
         </div>
         <div>
           <h1 class="login-title">Sistem Perolehan</h1>
@@ -79,7 +79,7 @@
       <div class="topbar-inner">
         <div class="brand">
           <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <img src="assets/logo-perolehan.png" alt="Logo Sistem Perolehan" />
           </div>
           <div>
             <h1 class="brand-name">Sistem Perolehan</h1>
@@ -121,6 +121,21 @@
         </nav>
 
         <div class="sidebar-footer">
+          <nav class="sidebar-nav sidebar-nav-footer">
+            <button class="nav-item nav-item-disabled" disabled aria-disabled="true" title="Akan datang">
+              <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <span>Tetapan</span>
+            </button>
+            <button class="nav-item nav-item-disabled" disabled aria-disabled="true" title="Akan datang">
+              <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <span>Bantuan</span>
+            </button>
+          </nav>
+
           <div class="sidebar-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             Berdasarkan PK 2.9
@@ -298,6 +313,22 @@
             </button>
           </div>
 
+          <div class="rekod-filters">
+            <div class="rekod-search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="rekod-search-input" class="rekod-search-input" placeholder="Cari mengikut tajuk / situasi perolehan..." autocomplete="off" />
+              <button id="rekod-search-clear" class="rekod-search-clear hidden" title="Kosongkan carian">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="rekod-date-pills" id="rekod-date-pills">
+              <button class="rekod-date-pill active" data-range="all">Semua</button>
+              <button class="rekod-date-pill" data-range="today">Hari Ini</button>
+              <button class="rekod-date-pill" data-range="week">Minggu Ini</button>
+              <button class="rekod-date-pill" data-range="month">Bulan Ini</button>
+            </div>
+          </div>
+
           <div id="rekod-list">
             <div class="rekod-loading">
               <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>
@@ -310,7 +341,10 @@
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <!-- Floating chat widget (Tanya Soalan Susulan) -->
+  <div id="chat-widget-root"></div>
+
+  <script src="app.js?v=12"></script>
 
 <!-- AI Context Menu -->
 <div id="ai-context-menu" class="ai-context-menu" style="display:none;">

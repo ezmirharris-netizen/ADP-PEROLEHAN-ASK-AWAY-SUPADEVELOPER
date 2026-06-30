@@ -60,6 +60,51 @@ const DOC_FIELDS = {
   ],
 };
 
+/* ---------- Demo autofill data ---------- */
+/* Fixed dummy values used by the "Demo" button to quickly fill every field
+   except file (.docx) inputs, which must be uploaded manually. */
+const DEMO_DOC_DATA = {
+  Tajuk: "Pembelian Komputer Riba Untuk Kegunaan Pejabat",
+  No_Siri: "001",
+  No_SH: "SH/2026/001",
+  KOD_MOF: "210301",
+  link_Gform: "https://forms.gle/contoh-demo",
+  Tarikh_buka_SH: "2026-07-01",
+  Tarikh_tutup_SH: "2026-07-15",
+  Masa_tutup: "12:00",
+  Nama_Pegawai: "Ahmad Bin Abdullah",
+  No_Phone: "03-8888 8888",
+  Email_Pegawai: "ahmad.abdullah@jabatan.gov.my",
+};
+
+const DEMO_SST_DATA = {
+  NO_SST: "SST/2026/001",
+  No_SST: "SST/2026/001",
+  Nama_Syarikat: "Syarikat Maju Jaya Sdn Bhd",
+  Alamat_Syarikat: "No. 12, Jalan Perindustrian 5, Taman Maju, 81100 Johor Bahru, Johor",
+  No_Pendaftaran: "SSM/2010/0012345",
+  Jenis_Perolehan: "Bekalan",
+  Tajuk: "Pembelian Komputer Riba Untuk Kegunaan Pejabat",
+  Harga: "RM 10,000.00",
+  Tempoh_Sah_Laku: "90 hari",
+  Harga_SH: "RM 10,000.00",
+  Peruntukan_Cukai_P: "6%",
+  Fi_khidmat: "RM 500.00",
+  Harga_K: "RM 10,600.00",
+  Tempoh_K: "12 bulan",
+  Tarikh_Mula_K: "2026-08-01",
+  Tarikh_Tamat_K: "2027-07-31",
+  Kadar_Bon: "5%",
+  Nilai_Bon: "RM 530.00",
+  Nilai_Polisi: "RM 530.00",
+  No_Pendaftaraan_KK: "MOF/2024/12345",
+  Kod_Bidang_Syarikat: "210301",
+  Taraf_Syarikat: "Bumiputera",
+  Tempoh_Bumiputera: "01/01/2024 - 31/12/2025",
+  No_Pendaftaran_CP: "CP/2024/56789",
+  Tarikh_CP: "2024-01-15",
+};
+
 const VALID_CREDENTIALS = [
   { id: "admin", password: "admin123" },
   { id: "user01", password: "password" },
@@ -160,7 +205,7 @@ function renderTracker() {
 renderTracker();
 
 /* ---------- Sidebar navigation ---------- */
-const navItems = document.querySelectorAll(".nav-item");
+const navItems = document.querySelectorAll(".nav-item:not(.nav-item-disabled)");
 const pageAnalisis = document.getElementById("page-analisis");
 const pageRekod = document.getElementById("page-rekod");
 
@@ -176,6 +221,33 @@ navItems.forEach((btn) => {
 });
 
 document.getElementById("rekod-refresh-btn").addEventListener("click", fetchRekod);
+
+/* ---------- Rekod search & date filter controls ---------- */
+const rekodSearchInput = document.getElementById("rekod-search-input");
+const rekodSearchClear = document.getElementById("rekod-search-clear");
+const rekodDatePills = document.getElementById("rekod-date-pills");
+
+rekodSearchInput?.addEventListener("input", () => {
+  rekodSearchQuery = rekodSearchInput.value;
+  rekodSearchClear?.classList.toggle("hidden", !rekodSearchQuery.trim());
+  applyRekodFilters();
+});
+
+rekodSearchClear?.addEventListener("click", () => {
+  rekodSearchQuery = "";
+  rekodSearchInput.value = "";
+  rekodSearchClear.classList.add("hidden");
+  rekodSearchInput.focus();
+  applyRekodFilters();
+});
+
+rekodDatePills?.addEventListener("click", (e) => {
+  const pill = e.target.closest(".rekod-date-pill");
+  if (!pill) return;
+  rekodDateRange = pill.dataset.range;
+  rekodDatePills.querySelectorAll(".rekod-date-pill").forEach((p) => p.classList.toggle("active", p === pill));
+  applyRekodFilters();
+});
 
 /* ---------- Perolehan form ---------- */
 const perolehanForm = document.getElementById("perolehan-form");
@@ -277,7 +349,7 @@ perolehanForm.addEventListener("submit", async (e) => {
     docFormValues: null,
     chatMessages: [],
     chatStreaming: false,
-    showChat: true,
+    showChat: false,
     sstBerdaftar: null,
     sstBerkaitan: null,
     sstFormSubmitting: false,
@@ -505,6 +577,10 @@ function entryBodyHtml(entry) {
               </div>
               ${entry.docFormError ? `<div class="doc-form-error">${escapeHtml(entry.docFormError)}</div>` : ""}
               <div class="doc-form-actions">
+                <button class="btn btn-outline btn-sm btn-demo" data-action="doc-demo" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""} title="Isi semua medan dengan data contoh (kecuali fail DOCX)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>
+                  Demo
+                </button>
                 <button class="btn btn-outline btn-sm" data-action="doc-cancel" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>Batal</button>
                 <button class="btn btn-doc-submit" data-action="doc-submit" data-id="${entry.id}" ${entry.docFormSubmitting ? "disabled" : ""}>
                   ${entry.docFormSubmitting
@@ -559,11 +635,6 @@ function entryBodyHtml(entry) {
         html += sstFormHtml(entry);
       }
     }
-  }
-
-  // Chat section — show after analysis completes
-  if (entry.aiAnalysis && !entry.errored && !entry.streaming) {
-    html += chatSectionHtml(entry);
   }
 
   return html;
@@ -680,6 +751,10 @@ function sstFormBodyHtml(entry) {
     ${berkaitanHtml}
     ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
     <div class="doc-form-actions">
+      <button class="btn btn-outline btn-sm btn-demo" data-action="sst-demo" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""} title="Isi semua medan dengan data contoh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg>
+        Demo
+      </button>
       <button class="btn btn-outline btn-sm" data-action="sst-cancel" data-id="${id}" ${entry.sstFormSubmitting ? "disabled" : ""}>Batal</button>
       <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
         ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
@@ -722,32 +797,55 @@ function updateSstFormBody(entry) {
   return false;
 }
 
-function chatSectionHtml(entry) {
-  const messagesHtml = entry.chatMessages.map((msg) => {
+const chatWidgetRoot = document.getElementById("chat-widget-root");
+
+/* Picks which entry's follow-up chat the floating widget should represent:
+   whichever entry currently has the chat open, otherwise the expanded
+   entry with a finished analysis, otherwise the most recent finished one. */
+function getChatTargetEntry() {
+  return (
+    entries.find((e) => e.showChat) ||
+    entries.find((e) => e.showAI && e.aiAnalysis && !e.errored && !e.streaming) ||
+    entries.find((e) => e.aiAnalysis && !e.errored && !e.streaming) ||
+    null
+  );
+}
+
+function chatMessagesHtml(entry) {
+  return entry.chatMessages.map((msg) => {
     if (msg.role === "user") {
       return `<div class="chat-msg chat-msg-user"><div class="chat-bubble chat-bubble-user">${escapeHtml(msg.content)}</div></div>`;
     }
     return `<div class="chat-msg chat-msg-ai"><div class="chat-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/></svg></div><div class="chat-bubble chat-bubble-ai">${renderMarkdown(msg.content)}${msg.streaming ? '<span class="streaming-cursor"></span>' : ""}</div></div>`;
   }).join("");
+}
 
-  const isStreaming = entry.chatStreaming;
+const CHAT_SEND_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+const CHAT_SEND_SPINNER = `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>`;
 
-  return `
-    <div class="chat-section" id="chat-${entry.id}">
-      <button class="chat-toggle" data-action="chat-toggle" data-id="${entry.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Tanya Soalan Susulan
-        <svg class="chat-toggle-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${entry.showChat ? '<polyline points="18 15 12 9 6 15"/>' : '<polyline points="6 9 12 15 18 9"/>'}</svg>
-      </button>
+function chatWidgetHtml(entry) {
+  if (entry.showChat) {
+    const isStreaming = entry.chatStreaming;
 
-      ${entry.showChat ? `
+    return `
+      <div class="chat-panel" id="chat-${entry.id}">
+        <div class="chat-panel-header">
+          <div class="chat-panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Tanya Soalan Susulan
+          </div>
+          <button class="chat-panel-close" data-action="chat-toggle" data-id="${entry.id}" aria-label="Tutup">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
         <div class="chat-body">
           ${entry.chatMessages.length === 0 ? `
             <div class="chat-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               Tanya apa-apa soalan berkaitan analisis perolehan ini
             </div>
-          ` : `<div class="chat-messages" id="chat-messages-${entry.id}">${messagesHtml}</div>`}
+          ` : `<div class="chat-messages" id="chat-messages-${entry.id}">${chatMessagesHtml(entry)}</div>`}
 
           <div class="chat-input-row">
             <textarea
@@ -759,15 +857,78 @@ function chatSectionHtml(entry) {
               onkeydown="chatKeydown(event, ${entry.id})"
             ></textarea>
             <button class="chat-send-btn" data-action="chat-send" data-id="${entry.id}" ${isStreaming ? "disabled" : ""}>
-              ${isStreaming
-                ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>`
-                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`}
+              ${isStreaming ? CHAT_SEND_SPINNER : CHAT_SEND_ICON}
             </button>
           </div>
         </div>
-      ` : ""}
-    </div>`;
+      </div>`;
+  }
+
+  return `
+    <button class="chat-fab" data-action="chat-toggle" data-id="${entry.id}" aria-label="Tanya Soalan Susulan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>`;
 }
+
+/* Re-renders the floating chat widget to reflect current entry state.
+   Call this any time entries/chat state changes instead of relying on
+   the (now chat-section-free) entry card re-render. Replaces the whole
+   widget, so it's only used for structural changes (open/close, switching
+   which entry is targeted, new message added) — not for every streamed
+   token, which would re-trigger the panel's open animation and flicker. */
+function renderChatWidget() {
+  if (!chatWidgetRoot) return;
+  const target = getChatTargetEntry();
+  if (!target) {
+    chatWidgetRoot.innerHTML = "";
+    return;
+  }
+  chatWidgetRoot.innerHTML = `<div class="chat-widget">${chatWidgetHtml(target)}</div>`;
+}
+
+/* Lightweight update used while an AI reply is streaming: patches just the
+   message bubble text and the send button's disabled/spinner state, instead
+   of replacing the whole panel. Falls back to a full render if the expected
+   DOM nodes aren't there (e.g. panel currently closed). */
+function updateChatStreamingUI(entry) {
+  if (!chatWidgetRoot) return;
+  const messagesEl = document.getElementById(`chat-messages-${entry.id}`);
+  if (!entry.showChat || !messagesEl) {
+    renderChatWidget();
+    return;
+  }
+  messagesEl.innerHTML = chatMessagesHtml(entry);
+
+  const isStreaming = entry.chatStreaming;
+  const sendBtn = chatWidgetRoot.querySelector(`.chat-send-btn[data-id="${entry.id}"]`);
+  if (sendBtn) {
+    sendBtn.disabled = isStreaming;
+    sendBtn.innerHTML = isStreaming ? CHAT_SEND_SPINNER : CHAT_SEND_ICON;
+  }
+  const inputEl = document.getElementById(`chat-input-${entry.id}`);
+  if (inputEl) inputEl.disabled = isStreaming;
+}
+
+chatWidgetRoot?.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = parseInt(btn.dataset.id, 10);
+  const entry = entries.find((x) => x.id === id);
+  if (!entry) return;
+
+  if (btn.dataset.action === "chat-toggle") {
+    const opening = !entry.showChat;
+    if (opening) {
+      for (const e2 of entries) e2.showChat = false;
+    }
+    entry.showChat = opening;
+    renderChatWidget();
+  } else if (btn.dataset.action === "chat-send") {
+    const input = document.getElementById(`chat-input-${id}`);
+    const question = input?.value?.trim();
+    if (question && !entry.chatStreaming) sendChatMessage(entry, question);
+  }
+});
 
 function updateEntryBody(entry) {
   const el = entriesList.querySelector(`[data-body="${entry.id}"]`);
@@ -799,6 +960,8 @@ function updateEntryBody(entry) {
       }
     }
   }
+
+  renderChatWidget();
 }
 
 function renderEntries() {
@@ -806,10 +969,12 @@ function renderEntries() {
   if (entries.length === 0) {
     entriesSection.classList.add("hidden");
     entriesList.innerHTML = "";
+    renderChatWidget();
     return;
   }
   entriesSection.classList.remove("hidden");
   entriesList.innerHTML = entries.map(entryCardHtml).join("");
+  renderChatWidget();
 }
 
 entriesList.addEventListener("click", (e) => {
@@ -908,6 +1073,13 @@ entriesList.addEventListener("click", (e) => {
     saveSstFieldValues(entry);
     entry.sstBerkaitan = false;
     if (!updateSstFormBody(entry)) updateEntryBody(entry);
+  } else if (btn.dataset.action === "sst-demo") {
+    saveSstFieldValues(entry);
+    entry.sstFormValues = { ...(entry.sstFormValues ?? {}), ...DEMO_SST_DATA };
+    entry.sstBerdaftar = true;
+    entry.sstBerkaitan = true;
+    entry.sstFormError = "";
+    if (!updateSstFormBody(entry)) updateEntryBody(entry);
   } else if (btn.dataset.action === "sst-submit") {
     if (entry.sstBerdaftar !== null && entry.sstBerkaitan !== null) {
       saveSstFieldValues(entry);
@@ -925,13 +1097,6 @@ entriesList.addEventListener("click", (e) => {
     entry.sstFormValues = null;
     entry.sstFormError = "";
     updateEntryBody(entry);
-  } else if (btn.dataset.action === "chat-toggle") {
-    entry.showChat = !entry.showChat;
-    updateEntryBody(entry);
-  } else if (btn.dataset.action === "chat-send") {
-    const input = document.getElementById(`chat-input-${id}`);
-    const question = input?.value?.trim();
-    if (question && !entry.chatStreaming) sendChatMessage(entry, question);
   } else if (btn.dataset.action === "doc-edit") {
     entry.docGenSuccess = false;
     entry.showDocPrompt = false;
@@ -945,6 +1110,10 @@ entriesList.addEventListener("click", (e) => {
     entry.docGenSuccess = !!entry.docHasGenerated;
     entry.docFormError = "";
     renderEntries();
+  } else if (btn.dataset.action === "doc-demo") {
+    entry.docFormValues = { ...(entry.docFormValues ?? {}), ...DEMO_DOC_DATA };
+    entry.docFormError = "";
+    updateEntryBody(entry);
   } else if (btn.dataset.action === "doc-submit") {
     const docType = entry.selectedDocType ?? "tawaran";
     const fields = DOC_FIELDS[docType] ?? DOC_FIELDS["tawaran"];
@@ -991,7 +1160,7 @@ async function sendChatMessage(entry, question) {
   // Add placeholder AI message (streaming)
   const aiMsg = { role: "assistant", content: "", streaming: true };
   entry.chatMessages.push(aiMsg);
-  updateEntryBody(entry);
+  renderChatWidget();
   scrollChatToBottom(entry.id);
 
   try {
@@ -1008,7 +1177,7 @@ async function sendChatMessage(entry, question) {
       },
       (chunk) => {
         aiMsg.content += chunk;
-        updateEntryBody(entry);
+        updateChatStreamingUI(entry);
         scrollChatToBottom(entry.id);
       },
       () => {},
@@ -1021,7 +1190,7 @@ async function sendChatMessage(entry, question) {
   } finally {
     aiMsg.streaming = false;
     entry.chatStreaming = false;
-    updateEntryBody(entry);
+    updateChatStreamingUI(entry);
     scrollChatToBottom(entry.id);
   }
 }
@@ -1201,6 +1370,8 @@ async function submitSstForm(entry) {
 const REKOD_PER_PAGE = 5;
 let rekodPage = 1;
 let rekodOpenIds = new Set();
+let rekodSearchQuery = "";
+let rekodDateRange = "all"; // all | today | week | month
 
 async function fetchRekod() {
   const userId = sessionStorage.getItem("userId") || "unknown";
@@ -1213,24 +1384,74 @@ async function fetchRekod() {
     const res = await fetch(`${BACKEND_URL}/api/rekod?userId=${encodeURIComponent(userId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = await res.json();
+    window._rekodRowsAll = rows;
     rekodPage = 1;
-    renderRekod(rows);
+    applyRekodFilters();
   } catch (err) {
     rekodList.innerHTML = `<div class="rekod-error">Gagal memuatkan rekod: ${escapeHtml(err.message)}</div>`;
   }
 }
 
-function renderRekod(rows) {
+/* Returns the start of the given calendar range (local time) as a Date. */
+function rekodRangeStart(range) {
+  const now = new Date();
+  if (range === "today") {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  if (range === "week") {
+    // Week starts on Monday
+    const day = now.getDay(); // 0 = Sunday
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    return monday;
+  }
+  if (range === "month") {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  return null;
+}
+
+/* Recomputes the filtered/searched rekod list from the cached full list,
+   then re-renders. Call this whenever the search box or date pill changes. */
+function applyRekodFilters() {
+  const all = window._rekodRowsAll || [];
+  const query = rekodSearchQuery.trim().toLowerCase();
+  const rangeStart = rekodRangeStart(rekodDateRange);
+
+  const filtered = all.filter((row) => {
+    if (query && !(row.situasi || "").toLowerCase().includes(query)) return false;
+    if (rangeStart) {
+      const createdAt = row.created_at ? new Date(row.created_at) : null;
+      if (!createdAt || createdAt < rangeStart) return false;
+    }
+    return true;
+  });
+
+  rekodPage = 1;
+  renderRekod(filtered, all.length);
+}
+
+function renderRekod(rows, totalAllCount) {
   const rekodList = document.getElementById("rekod-list");
+  const hasAnyRecords = (totalAllCount ?? (window._rekodRowsAll || []).length) > 0;
+  const isFiltering = !!rekodSearchQuery.trim() || rekodDateRange !== "all";
+
   if (!rows || rows.length === 0) {
-    rekodList.innerHTML = `<div class="rekod-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <p>Tiada rekod perolehan lagi.<br>Mulakan analisis baharu di menu <strong>Analisis Perolehan</strong>.</p>
-    </div>`;
+    if (hasAnyRecords && isFiltering) {
+      rekodList.innerHTML = `<div class="rekod-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>Tiada rekod sepadan dengan carian/penapis ini.<br>Cuba kata kunci lain atau tukar penapis tarikh.</p>
+      </div>`;
+    } else {
+      rekodList.innerHTML = `<div class="rekod-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>Tiada rekod perolehan lagi.<br>Mulakan analisis baharu di menu <strong>Analisis Perolehan</strong>.</p>
+      </div>`;
+    }
     return;
   }
 
-  // Store all rows for PDF/delete use
+  // Store current filtered rows for pagination/PDF/delete use
   window._rekodRows = rows;
 
   const totalPages = Math.ceil(rows.length / REKOD_PER_PAGE);
@@ -1550,9 +1771,10 @@ document.addEventListener("DOMContentLoaded", function initAiContextMenu() {
     // and the requestAnimationFrame callback runs after that.
     const quotedText = selectedText;
 
-    // Expand chat if collapsed
+    // Expand chat if collapsed (and close any other entry's open chat)
+    for (const e2 of entries) e2.showChat = false;
     entry.showChat = true;
-    updateEntryBody(entry);
+    renderChatWidget();
 
     // Scroll chat into view then send
     requestAnimationFrame(() => {

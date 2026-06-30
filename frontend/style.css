@@ -85,19 +85,14 @@ code {
 }
 
 .login-logo {
-  width: 52px;
-  height: 52px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
-  backdrop-filter: blur(8px);
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
 }
-.login-logo svg { width: 26px; height: 26px; }
+.login-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 .login-title {
   font-size: 22px;
@@ -219,18 +214,13 @@ code {
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #1e40af, #3b82f6);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+  background: #fff;
+  border-radius: 50%;
 }
-.brand-icon svg { width: 19px; height: 19px; }
+.brand-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 .brand-name {
   font-size: 15px;
@@ -376,10 +366,28 @@ code {
   box-shadow: 0 2px 6px rgba(30,64,175,0.25);
 }
 
+.nav-item-disabled,
+.nav-item-disabled:hover {
+  cursor: default;
+  opacity: 0.55;
+  background: transparent;
+  border-color: transparent;
+  color: #94a3b8;
+}
+.nav-item-disabled .nav-icon,
+.nav-item-disabled:hover .nav-icon {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
 .sidebar-footer {
   padding-top: 16px;
   border-top: 1px solid #f1f5f9;
   margin-top: 12px;
+}
+
+.sidebar-nav-footer {
+  margin-bottom: 12px;
 }
 
 .sidebar-badge {
@@ -931,6 +939,18 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
   margin-top: 14px;
 }
 
+.btn-demo {
+  margin-right: auto;
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.btn-demo:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #78350f;
+}
+
 .btn-doc-submit {
   display: inline-flex;
   align-items: center;
@@ -1038,36 +1058,99 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 .sst-accepted svg { color: #3b82f6; flex-shrink: 0; }
 
 /* =====================================================
-   CHAT SECTION
+   CHAT WIDGET (floating, bottom-right)
    ===================================================== */
-.chat-section {
-  margin-top: 16px;
-  border: 1.5px solid #e0e7ff;
-  border-radius: 12px;
-  overflow: hidden;
+.chat-widget {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.chat-toggle {
+.chat-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3730a3, #4f46e5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(55,48,163,0.35), 0 2px 6px rgba(0,0,0,0.15);
+  transition: all 0.15s ease;
+}
+.chat-fab svg { width: 24px; height: 24px; }
+.chat-fab:hover {
+  background: linear-gradient(135deg, #312e81, #4338ca);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 10px 28px rgba(55,48,163,0.4), 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.chat-panel {
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  max-height: min(560px, calc(100vh - 110px));
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15,23,42,0.22), 0 4px 14px rgba(15,23,42,0.12);
+  border: 1px solid #e0e7ff;
+  animation: chat-panel-in 0.16s ease;
+}
+@keyframes chat-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.chat-panel-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 11px 16px;
-  background: linear-gradient(to right, #eef2ff, #e8f0fe);
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #3730a3;
-  font-family: inherit;
-  transition: background 0.15s;
-  text-align: left;
+  padding: 14px 16px;
+  background: linear-gradient(to right, #3730a3, #4f46e5);
+  color: #fff;
+  flex-shrink: 0;
 }
-.chat-toggle:hover { background: linear-gradient(to right, #e0e7ff, #dde9fd); }
-.chat-toggle svg { width: 15px; height: 15px; flex-shrink: 0; }
-.chat-toggle-caret { margin-left: auto; }
+.chat-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.chat-panel-title svg { width: 16px; height: 16px; flex-shrink: 0; }
+.chat-panel-close {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.chat-panel-close:hover { background: rgba(255,255,255,0.22); }
+.chat-panel-close svg { width: 14px; height: 14px; }
 
-.chat-body { background: #fff; border-top: 1px solid #e0e7ff; }
+.chat-body {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
 
 .chat-empty {
   display: flex;
@@ -1080,7 +1163,8 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 .chat-empty svg { width: 16px; height: 16px; flex-shrink: 0; }
 
 .chat-messages {
-  max-height: 400px;
+  flex: 1;
+  min-height: 160px;
   overflow-y: auto;
   padding: 14px 16px;
   display: flex;
@@ -1185,6 +1269,90 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 /* =====================================================
    REKOD PAGE
    ===================================================== */
+.rekod-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rekod-search-wrap {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+}
+.rekod-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+.rekod-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 36px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.15s;
+}
+.rekod-search-input::placeholder { color: #9ca3af; }
+.rekod-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+.rekod-search-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rekod-search-clear svg { width: 13px; height: 13px; }
+.rekod-search-clear:hover { background: #f1f5f9; color: #475569; }
+
+.rekod-date-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rekod-date-pill {
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #475569;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.rekod-date-pill:hover { border-color: #c7d2fe; color: #3730a3; background: #f5f5ff; }
+.rekod-date-pill.active {
+  background: linear-gradient(135deg, #3730a3, #4f46e5);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(55,48,163,0.25);
+}
+
 .rekod-loading {
   display: flex;
   align-items: center;
@@ -1443,11 +1611,10 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 
 .sst-conditional-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   padding: 12px 16px;
-  flex-wrap: wrap;
 }
 
 .sst-conditional-title {
@@ -1911,4 +2078,9 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 @media (max-width: 520px) {
   .doc-form-modal-overlay { padding: 12px; align-items: flex-end; }
   .doc-form-modal { max-height: 92vh; border-radius: 16px 16px 0 0; }
+
+  .chat-widget { right: 14px; bottom: 14px; }
+  .chat-fab { width: 50px; height: 50px; }
+  .chat-fab svg { width: 21px; height: 21px; }
+  .chat-panel { width: calc(100vw - 28px); max-height: min(72vh, calc(100vh - 90px)); }
 }

@@ -231,17 +231,7 @@ Gaya penulisan:
 - Gunakan **bold** untuk perkara penting
 - Gunakan petikan dasar yang disediakan sebagai sumber utama
 - JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
-
-FORMAT JAWAPAN (WAJIB DIPATUHI):
-- Jawapan MESTI dalam bentuk perenggan (prose) yang mengalir secara semula jadi, BUKAN senarai bernombor, KECUALI soalan itu sendiri secara jelas meminta langkah-langkah, prosedur berurutan, atau senarai item/dokumen.
-- Contoh soalan yang WAJIB dijawab dalam perenggan (prose), bukan senarai: "Kenapa...", "Apa maksud...", "Bagaimana ia ditentukan...", "Apa perbezaan antara...", "Adakah...", "Patutkah..."
-- Contoh soalan yang BOLEH dijawab dalam senarai bernombor: "Apa langkah-langkah...", "Senaraikan dokumen...", "Apa syarat-syarat yang perlu dipatuhi...", "Bagaimana cara untuk..."
-- Di dalam perenggan, gunakan **bold** untuk istilah dan nombor seksyen penting secara terus dalam ayat, tanpa perlu memecahkan jawapan kepada senarai jika ia bukan satu proses berurutan.
-- Jika senarai bernombor memang sesuai digunakan:
-  - Nombor MESTI berurutan (1, 2, 3, 4...) — JANGAN gunakan 1, 1, 1 atau nombor yang berulang
-  - Setiap langkah bernombor MESTI berada dalam SATU senarai berturutan tanpa baris kosong yang memisahkan antara nombor
-  - JANGAN letak perenggan huraian panjang atau sub-senarai (bullet) di antara nombor utama yang boleh menyebabkan penomboran semula bermula dari 1
-  - Jika huraian tambahan diperlukan, letakkan sebagai sub-perenggan berindent DALAM item yang sama, bukan sebagai item baru`;
+- Nombor MESTI berurutan (1, 2, 3, 4...) — JANGAN gunakan 1, 1, 1 atau nombor yang berulang`;
 
     const openai = getOpenAIClient();
     const stream = await openai.chat.completions.create({

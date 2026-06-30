@@ -30,11 +30,7 @@ FORMAT DAN PENUTUP (WAJIB DIPATUHI):
 - Dokumen ini adalah laporan rasmi, BUKAN perbualan — jangan tulis seperti sedang berbual dengan pengguna
 - JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
 - JANGAN tambah bahagian tambahan selain 7 bahagian yang ditetapkan di bawah
-<<<<<<< HEAD
-- Laporan MESTI tamat sebaik selesai bahagian "Dokumen Yang perlu disediakan" — tanpa ayat penutup tambahan selepas itu
-=======
 - Laporan MESTI tamat sebaik selesai bahagian "Dokumen Yang Perlu Disediakan" — tanpa ayat penutup tambahan selepas itu
->>>>>>> 3a14fbbee15e2fc70a79f51008f42649b691f628
 
 ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahagian):
 
@@ -235,7 +231,10 @@ Gaya penulisan:
 - Gunakan **bold** untuk perkara penting
 - Gunakan petikan dasar yang disediakan sebagai sumber utama
 - JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
-- JANGAN gunakan 1, 1, 1 atau nombor yang berulang — setiap langkah mesti bernombor unik dan berturutan`;
+- JANGAN gunakan 1, 1, 1 atau nombor yang berulang — setiap langkah mesti bernombor unik dan berturutan
+- Setiap langkah bernombor MESTI berada dalam SATU senarai bermarkah berturutan tanpa baris kosong yang memisahkan antara nombor.
+- JANGAN letak perenggan huraian panjang atau sub-senarai (bullet) di antara nombor utama yang boleh menyebabkan penomboran semula bermula dari 1.
+- Jika huraian tambahan diperlukan, letakkan sebagai sub-perenggan berindent DALAM item yang sama, bukan sebagai item baru.`;
 
     const openai = getOpenAIClient();
     const stream = await openai.chat.completions.create({

@@ -1344,3 +1344,111 @@ function exportToPdf(entry) {
   drawFooter();
   doc.save(`Panduan_Perolehan_${entry.id}.pdf`);
 }
+
+/* =====================================================
+   Right-click context menu — "Tanya Chatbot"
+   ===================================================== */
+document.addEventListener("DOMContentLoaded", function initAiContextMenu() {
+  const menu = document.getElementById("ai-context-menu");
+  const askBtn = document.getElementById("ai-context-ask");
+
+  let activeEntryId = null;
+  let selectedText = "";
+  let cachedSelection = "";   // captured on mouseup before right-click clears it
+  let cachedBodyEl = null;
+
+  // Cache selection on left-button mouseup so right-click still has it
+  document.addEventListener("mouseup", (e) => {
+    if (e.button !== 0) return; // ignore right-click mouseup
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : "";
+    const anchor = sel && sel.anchorNode ? sel.anchorNode.parentElement : null;
+    const mdEl = anchor ? anchor.closest(".entry-body .md") : null;
+    if (text && mdEl) {
+      cachedSelection = text;
+      cachedBodyEl = mdEl.closest("[data-body]");
+    } else {
+      cachedSelection = "";
+      cachedBodyEl = null;
+    }
+  });
+
+  function hideMenu() {
+    menu.style.display = "none";
+    activeEntryId = null;
+    selectedText = "";
+  }
+
+  // Show menu on right-click inside an AI analysis .md block
+  document.addEventListener("contextmenu", (e) => {
+    // Walk up to find if we're inside a .md element that lives in an entry body
+    const mdEl = e.target.closest(".entry-body .md");
+    if (!mdEl) { hideMenu(); return; }
+
+    // Use the cached selection (captured on mouseup) since right-click may clear it
+    const text = cachedSelection;
+    if (!text) { hideMenu(); return; }
+
+    const bodyEl = cachedBodyEl;
+    if (!bodyEl) { hideMenu(); return; }
+
+    e.preventDefault();
+
+    activeEntryId = Number(bodyEl.dataset.body);
+    selectedText = text;
+
+    // Position menu near cursor, keeping it on-screen
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    menu.style.display = "block";
+    const mw = menu.offsetWidth;
+    const mh = menu.offsetHeight;
+    let x = e.clientX + 4;
+    let y = e.clientY + 4;
+    if (x + mw > vw - 8) x = e.clientX - mw - 4;
+    if (y + mh > vh - 8) y = e.clientY - mh - 4;
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+  });
+
+  // Hide on any outside click
+  document.addEventListener("mousedown", (e) => {
+    if (!menu.contains(e.target)) hideMenu();
+  });
+
+  // Hide on scroll or Escape
+  document.addEventListener("scroll", hideMenu, true);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideMenu(); });
+
+  // "Ask Chatbot" action
+  askBtn.addEventListener("click", () => {
+    if (!activeEntryId || !selectedText) { hideMenu(); return; }
+
+    const entry = entries.find((x) => x.id === activeEntryId);
+    if (!entry) { hideMenu(); return; }
+
+    // Capture these now — hideMenu() below will reset the shared variables
+    // before the requestAnimationFrame callback below gets a chance to run
+    const capturedText = selectedText;
+    const capturedEntry = entry;
+
+    // Expand chat if collapsed
+    capturedEntry.showChat = true;
+    updateEntryBody(capturedEntry);
+
+    // Scroll chat into view then send
+    requestAnimationFrame(() => {
+      const chatEl = document.getElementById(`chat-${capturedEntry.id}`);
+      if (chatEl) chatEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      // Build a clear question referencing the selected snippet
+      const question = `Mengenai petikan ini daripada analisis:\n"${capturedText}"\n\nBoleh terangkan dengan lebih lanjut?`;
+
+      if (!capturedEntry.chatStreaming) {
+        sendChatMessage(capturedEntry, question);
+      }
+    });
+
+    hideMenu();
+  });
+});

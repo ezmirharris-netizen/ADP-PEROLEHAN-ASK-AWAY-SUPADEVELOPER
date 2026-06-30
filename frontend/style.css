@@ -1750,6 +1750,74 @@ input:hover:not(:focus), select:hover:not(:focus) { border-color: #cbd5e1; }
 .ts-done .tracker-sub { color: #16a34a; }
 .ts-active .tracker-sub { color: #3b82f6; }
 
+/* ---------- AI Context Menu ---------- */
+.ai-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.13), 0 2px 6px rgba(15,23,42,0.07);
+  padding: 4px;
+  min-width: 170px;
+  animation: ctxFadeIn 0.12s ease;
+}
+@keyframes ctxFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.ai-context-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 13px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b5bdb;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.13s;
+}
+.ai-context-item:hover {
+  background: #eef2ff;
+}
+.ai-context-item svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  stroke: #3b5bdb;
+}
+.md-selectable ::selection {
+  background: #c7d2fe;
+}
+
+/* ---------- Chat quoted prompt ---------- */
+.chat-quoted-prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: #f1f5f9;
+  border-left: 3px solid #6366f1;
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #475569;
+  font-style: italic;
+  line-height: 1.5;
+}
+.chat-quoted-prompt svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  stroke: #6366f1;
+}
+
 /* Responsive: collapse to single col on smaller screens */
 @media (max-width: 900px) {
   .analisis-layout {

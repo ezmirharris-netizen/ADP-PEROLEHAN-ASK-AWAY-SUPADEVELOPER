@@ -40,7 +40,7 @@ Generated .docx returned to user
 .
 ├── backend/
 │   ├── src/
-│   │   ├── index.ts              ← server entry point (port 5000)
+│   │   ├── index.ts              ← server entry point (port 3001)
 │   │   ├── app.ts                ← Express app, static file serving
 │   │   ├── supabaseClient.ts     ← Supabase storage client
 │   │   └── routes/
@@ -65,7 +65,7 @@ Generated .docx returned to user
 | `SUPABASE_URL` | Your Supabase project URL | Yes |
 | `SUPABASE_ANON_KEY` | Supabase anon/public API key | Yes |
 | `SUPABASE_BUCKET` | Storage bucket name (default: `templates`) | No |
-| `PORT` | Port to listen on (default: `5000`) | No |
+| `PORT` | Port to listen on (default: `3001`) | No |
 
 ---
 
@@ -94,7 +94,7 @@ node backend/scripts/createTemplate.mjs
 # Install dependencies (from project root)
 npm install
 
-# Run the backend (also serves frontend on port 5000)
+# Run the backend (also serves frontend on port 3001)
 npx tsx backend/src/index.ts
 ```
 
@@ -105,7 +105,7 @@ export SUPABASE_URL=https://your-project.supabase.co
 export SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Open `http://localhost:5000` in your browser.
+Open `http://localhost:3001` in your browser.
 
 ---
 
@@ -135,7 +135,7 @@ Connect Replit to GitHub (Git tab in sidebar) or download as zip and push manual
 3. Add environment variables in the Railway dashboard:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
-   - `PORT` = `5000`
+   - `PORT` = `3001`
 4. Railway auto-detects Node.js — no extra config needed
 5. Your app goes live at a `*.up.railway.app` URL
 

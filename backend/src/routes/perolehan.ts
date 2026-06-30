@@ -30,7 +30,7 @@ FORMAT DAN PENUTUP (WAJIB DIPATUHI):
 - Dokumen ini adalah laporan rasmi, BUKAN perbualan — jangan tulis seperti sedang berbual dengan pengguna
 - JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
 - JANGAN tambah bahagian tambahan selain 7 bahagian yang ditetapkan di bawah
-- Laporan MESTI tamat sebaik selesai bahagian "Amaran dan Perkara Yang Perlu Dielakkan" — tanpa ayat penutup tambahan selepas itu
+- Laporan MESTI tamat sebaik selesai bahagian "Dokumen Yang perlu disediakan" — tanpa ayat penutup tambahan selepas itu
 
 ANDA MESTI MENGISI FORMAT BERIKUT SECARA LENGKAP (jangan langkau mana-mana bahagian):
 
@@ -231,7 +231,9 @@ Gaya penulisan:
 - Jawab soalan dengan tepat dan ringkas
 - Sertakan nombor seksyen PK 2.9 yang spesifik apabila relevan
 - Gunakan **bold** untuk perkara penting
-- Gunakan petikan dasar yang disediakan sebagai sumber utama`;
+- Gunakan petikan dasar yang disediakan sebagai sumber utama
+- JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
+- JANGAN gunakan 1, 1, 1 atau nombor yang berulang — setiap langkah mesti bernombor unik dan berturutan`;
 
     const openai = getOpenAIClient();
     const stream = await openai.chat.completions.create({

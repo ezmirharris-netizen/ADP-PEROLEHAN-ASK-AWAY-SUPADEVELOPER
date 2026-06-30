@@ -7,6 +7,41 @@ const BACKEND_URL = window.location.hostname === "localhost"
   : window.location.origin;
 
 /* ---------- Document field configs per doc type ---------- */
+/* ---------- SST field configs ---------- */
+const SST_FIELDS_BASE = [
+  { key: "NO_SST",           label: "No. Rujukan SST",           type: "text", placeholder: "Contoh: SST/2026/001" },
+  { key: "No_SST",           label: "No. SST (dalam surat)",     type: "text", placeholder: "Contoh: SST/2026/001" },
+  { key: "Nama_Syarikat",    label: "Nama Syarikat",             type: "text", placeholder: "Nama syarikat pembekal", fullWidth: true },
+  { key: "Alamat_Syarikat",  label: "Alamat Syarikat",           type: "text", placeholder: "Alamat penuh syarikat", fullWidth: true },
+  { key: "No_Pendaftaran",   label: "No. Pendaftaran Syarikat",  type: "text", placeholder: "Contoh: ROC/SSM No." },
+  { key: "Jenis_Perolehan",  label: "Jenis Perolehan",           type: "text", placeholder: "Bekalan / Perkhidmatan / Kerja" },
+  { key: "Tajuk",            label: "Tajuk Perolehan",           type: "text", placeholder: "Tajuk lengkap perolehan", fullWidth: true },
+  { key: "Harga",            label: "Harga Tawaran (RM)",        type: "text", placeholder: "Contoh: RM 10,000.00" },
+  { key: "Tempoh_Sah_Laku",  label: "Tempoh Sah Laku",          type: "text", placeholder: "Contoh: 90 hari" },
+  { key: "Harga_SH",         label: "Harga Sebut Harga (RM)",   type: "text", placeholder: "Contoh: RM 10,000.00" },
+  { key: "Peruntukan_Cukai_P", label: "Peruntukan Cukai (%)",   type: "text", placeholder: "Contoh: 6%" },
+  { key: "Fi_khidmat",       label: "Fi Khidmat (RM)",          type: "text", placeholder: "Contoh: RM 500.00" },
+  { key: "Harga_K",          label: "Harga Kontrak (RM)",       type: "text", placeholder: "Contoh: RM 10,600.00" },
+  { key: "Tempoh_K",         label: "Tempoh Kontrak",           type: "text", placeholder: "Contoh: 12 bulan" },
+  { key: "Tarikh_Mula_K",    label: "Tarikh Mula Kontrak",      type: "date" },
+  { key: "Tarikh_Tamat_K",   label: "Tarikh Tamat Kontrak",     type: "date" },
+  { key: "Kadar_Bon",        label: "Kadar Bon Pelaksanaan (%)", type: "text", placeholder: "Contoh: 5%" },
+  { key: "Nilai_Bon",        label: "Nilai Bon (RM)",           type: "text", placeholder: "Contoh: RM 530.00" },
+  { key: "Nilai_Polisi",     label: "Nilai Polisi (RM)",        type: "text", placeholder: "Contoh: RM 530.00" },
+];
+
+const SST_FIELDS_BERDAFTAR = [
+  { key: "No_Pendaftaraan_KK", label: "No. Pendaftaran (Kementerian/Jabatan)", type: "text", placeholder: "Contoh: MOF/2024/XXXXX", fullWidth: true },
+  { key: "Kod_Bidang_Syarikat", label: "Kod Bidang Syarikat",  type: "text", placeholder: "Contoh: 210301" },
+  { key: "Taraf_Syarikat",     label: "Taraf Syarikat",        type: "text", placeholder: "Contoh: Bumiputera / Bukan Bumiputera" },
+  { key: "Tempoh_Bumiputera",  label: "Tempoh Sijil Bumiputera", type: "text", placeholder: "Contoh: 01/01/2024 - 31/12/2025" },
+];
+
+const SST_FIELDS_BERKAITAN = [
+  { key: "No_Pendaftaran_CP",  label: "No. Pendaftaran Cidbid/PAKK",  type: "text", placeholder: "Contoh: CP/2024/XXXXX" },
+  { key: "Tarikh_CP",          label: "Tarikh Sijil CP",              type: "date" },
+];
+
 const DOC_FIELDS = {
   "tawaran": [
     { key: "Tajuk",               label: "Tajuk Sebut Harga",             type: "text",  placeholder: "Contoh: Pembelian Komputer Riba", fullWidth: true },
@@ -205,6 +240,12 @@ perolehanForm.addEventListener("submit", async (e) => {
     chatMessages: [],
     chatStreaming: false,
     showChat: true,
+    sstBerdaftar: null,
+    sstBerkaitan: null,
+    sstFormSubmitting: false,
+    sstFormError: "",
+    sstGenSuccess: false,
+    sstFormValues: null,
   };
   entries.unshift(entry);
   renderEntries();
@@ -456,11 +497,16 @@ function entryBodyHtml(entry) {
     }
 
     if (entry.sstAccepted) {
-      html += `
-      <div class="sst-accepted">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        Baik! Sila isi maklumat di bawah untuk menjana <strong>Surat Setuju Terima</strong>.
-      </div>`;
+      if (entry.sstGenSuccess) {
+        html += `
+        <div class="doc-success sst-gen-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span><strong>Surat Setuju Terima</strong> berjaya dijana dan dimuat turun.</span>
+          <button class="btn btn-outline btn-sm" data-action="sst-again" data-id="${entry.id}" style="margin-left:auto;flex-shrink:0;">Jana Lagi</button>
+        </div>`;
+      } else {
+        html += sstFormHtml(entry);
+      }
     }
   }
 
@@ -470,6 +516,136 @@ function entryBodyHtml(entry) {
   }
 
   return html;
+}
+
+function sstFieldsHtml(fields, entryId, savedValues) {
+  let html = "";
+  for (const field of fields) {
+    const inputId = `sst-field-${field.key}-${entryId}`;
+    const savedVal = savedValues?.[field.key] ?? "";
+    html += `
+      <div class="field${field.fullWidth ? " field-full" : ""}">
+        <label for="${inputId}">${escapeHtml(field.label)}</label>
+        <input type="${field.type ?? "text"}" id="${inputId}" placeholder="${escapeHtml(field.placeholder ?? "")}" value="${escapeHtml(savedVal)}" />
+      </div>`;
+  }
+  return html;
+}
+
+function sstFormHtml(entry) {
+  const id = entry.id;
+  const saved = entry.sstFormValues ?? {};
+  const disabled = entry.sstFormSubmitting ? "disabled" : "";
+
+  let baseFieldsHtml = sstFieldsHtml(SST_FIELDS_BASE, id, saved);
+
+  /* ── Sekiranya Berdaftar ── */
+  let berdaftarHtml = "";
+  if (entry.sstBerdaftar === null) {
+    berdaftarHtml = `
+      <div class="sst-conditional-section">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Sekiranya Berdaftar dengan Kementerian/Jabatan?
+          </div>
+          <div class="sst-conditional-btns">
+            <button class="btn btn-sst-cond-yes" data-action="sst-berdaftar-yes" data-id="${id}" ${disabled}>Ya</button>
+            <button class="btn btn-sst-cond-no" data-action="sst-berdaftar-no" data-id="${id}" ${disabled}>Tidak</button>
+          </div>
+        </div>
+      </div>`;
+  } else if (entry.sstBerdaftar === true) {
+    berdaftarHtml = `
+      <div class="sst-conditional-section sst-conditional-open">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title sst-conditional-title-yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Sekiranya Berdaftar — Maklumat Pendaftaran
+          </div>
+          <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berdaftar-no" data-id="${id}" ${disabled}>Tukar ke Tidak</button>
+        </div>
+        <div class="doc-form-grid">${sstFieldsHtml(SST_FIELDS_BERDAFTAR, id, saved)}</div>
+      </div>`;
+  } else {
+    berdaftarHtml = `
+      <div class="sst-conditional-section sst-conditional-skipped">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title sst-conditional-title-no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Sekiranya Berdaftar — Ditinggalkan
+          </div>
+          <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berdaftar-yes" data-id="${id}" ${disabled}>Tukar ke Ya</button>
+        </div>
+      </div>`;
+  }
+
+  /* ── Sekiranya Berkaitan ── */
+  let berkaitanHtml = "";
+  if (entry.sstBerkaitan === null) {
+    berkaitanHtml = `
+      <div class="sst-conditional-section">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Sekiranya Berkaitan dengan Cidbid/PAKK?
+          </div>
+          <div class="sst-conditional-btns">
+            <button class="btn btn-sst-cond-yes" data-action="sst-berkaitan-yes" data-id="${id}" ${disabled}>Ya</button>
+            <button class="btn btn-sst-cond-no" data-action="sst-berkaitan-no" data-id="${id}" ${disabled}>Tidak</button>
+          </div>
+        </div>
+      </div>`;
+  } else if (entry.sstBerkaitan === true) {
+    berkaitanHtml = `
+      <div class="sst-conditional-section sst-conditional-open">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title sst-conditional-title-yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Sekiranya Berkaitan — Maklumat Cidbid/PAKK
+          </div>
+          <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berkaitan-no" data-id="${id}" ${disabled}>Tukar ke Tidak</button>
+        </div>
+        <div class="doc-form-grid">${sstFieldsHtml(SST_FIELDS_BERKAITAN, id, saved)}</div>
+      </div>`;
+  } else {
+    berkaitanHtml = `
+      <div class="sst-conditional-section sst-conditional-skipped">
+        <div class="sst-conditional-header">
+          <div class="sst-conditional-title sst-conditional-title-no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Sekiranya Berkaitan — Ditinggalkan
+          </div>
+          <button class="btn btn-sst-cond-change btn-sm" data-action="sst-berkaitan-yes" data-id="${id}" ${disabled}>Tukar ke Ya</button>
+        </div>
+      </div>`;
+  }
+
+  const canSubmit = entry.sstBerdaftar !== null && entry.sstBerkaitan !== null;
+
+  return `
+    <div class="doc-form doc-form-sst">
+      <div class="doc-form-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Maklumat — Surat Setuju Terima
+      </div>
+      <div class="doc-form-body">
+        <div class="doc-form-grid">${baseFieldsHtml}</div>
+        ${berdaftarHtml}
+        ${berkaitanHtml}
+        ${entry.sstFormError ? `<div class="doc-form-error">${escapeHtml(entry.sstFormError)}</div>` : ""}
+        <div class="doc-form-actions">
+          <button class="btn btn-doc-submit" data-action="sst-submit" data-id="${id}"
+            ${entry.sstFormSubmitting || !canSubmit ? "disabled" : ""}
+            title="${!canSubmit ? "Sila jawab soalan Sekiranya Berdaftar dan Sekiranya Berkaitan dahulu" : ""}">
+            ${entry.sstFormSubmitting
+              ? `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Menjana...`
+              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Jana &amp; Muat Turun (.docx)`}
+          </button>
+        </div>
+        ${!canSubmit ? `<p class="sst-pending-hint">Sila jawab soalan di atas (Sekiranya Berdaftar &amp; Sekiranya Berkaitan) sebelum menjana dokumen.</p>` : ""}
+      </div>
+    </div>`;
 }
 
 function chatSectionHtml(entry) {
@@ -559,10 +735,43 @@ entriesList.addEventListener("click", (e) => {
   } else if (btn.dataset.action === "sst-yes") {
     entry.sstDismissed = true;
     entry.sstAccepted = true;
+    entry.sstBerdaftar = null;
+    entry.sstBerkaitan = null;
+    entry.sstGenSuccess = false;
+    entry.sstFormValues = null;
+    entry.sstFormError = "";
     renderEntries();
   } else if (btn.dataset.action === "sst-no") {
     entry.sstDismissed = true;
     renderEntries();
+  } else if (btn.dataset.action === "sst-berdaftar-yes") {
+    saveSstFieldValues(entry);
+    entry.sstBerdaftar = true;
+    updateEntryBody(entry);
+  } else if (btn.dataset.action === "sst-berdaftar-no") {
+    saveSstFieldValues(entry);
+    entry.sstBerdaftar = false;
+    updateEntryBody(entry);
+  } else if (btn.dataset.action === "sst-berkaitan-yes") {
+    saveSstFieldValues(entry);
+    entry.sstBerkaitan = true;
+    updateEntryBody(entry);
+  } else if (btn.dataset.action === "sst-berkaitan-no") {
+    saveSstFieldValues(entry);
+    entry.sstBerkaitan = false;
+    updateEntryBody(entry);
+  } else if (btn.dataset.action === "sst-submit") {
+    if (entry.sstBerdaftar !== null && entry.sstBerkaitan !== null) {
+      saveSstFieldValues(entry);
+      submitSstForm(entry);
+    }
+  } else if (btn.dataset.action === "sst-again") {
+    entry.sstGenSuccess = false;
+    entry.sstBerdaftar = null;
+    entry.sstBerkaitan = null;
+    entry.sstFormValues = null;
+    entry.sstFormError = "";
+    updateEntryBody(entry);
   } else if (btn.dataset.action === "chat-toggle") {
     entry.showChat = !entry.showChat;
     updateEntryBody(entry);
@@ -755,7 +964,73 @@ async function submitDocForm(entry, data, files = {}) {
   }
 }
 
+/* ---------- SST helpers ---------- */
+function saveSstFieldValues(entry) {
+  const id = entry.id;
+  const allFields = [
+    ...SST_FIELDS_BASE,
+    ...SST_FIELDS_BERDAFTAR,
+    ...SST_FIELDS_BERKAITAN,
+  ];
+  const values = entry.sstFormValues ?? {};
+  for (const field of allFields) {
+    const el = document.getElementById(`sst-field-${field.key}-${id}`);
+    if (el) values[field.key] = el.value ?? "";
+  }
+  entry.sstFormValues = values;
+}
+
+async function submitSstForm(entry) {
+  entry.sstFormSubmitting = true;
+  entry.sstFormError = "";
+  updateEntryBody(entry);
+
+  const saved = entry.sstFormValues ?? {};
+  const payload = { ...saved };
+
+  if (entry.sstBerdaftar !== true) {
+    for (const f of SST_FIELDS_BERDAFTAR) payload[f.key] = "";
+  }
+  if (entry.sstBerkaitan !== true) {
+    for (const f of SST_FIELDS_BERKAITAN) payload[f.key] = "";
+  }
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/perolehan/generate-sst`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({ error: `Ralat pelayan ${response.status}` }));
+      throw new Error(errData.error ?? `Ralat pelayan ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safeName = (saved["Nama_Syarikat"] ?? "dokumen").replace(/\s+/g, "_");
+    a.download = `Surat_Setuju_Terima_${safeName}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    entry.sstGenSuccess = true;
+    entry.sstFormSubmitting = false;
+    updateEntryBody(entry);
+  } catch (err) {
+    entry.sstFormError = err.message ?? "Ralat semasa menjana Surat Setuju Terima.";
+    entry.sstFormSubmitting = false;
+    updateEntryBody(entry);
+  }
+}
+
 /* ---------- Rekod Perolehan page ---------- */
+const REKOD_PER_PAGE = 5;
+let rekodPage = 1;
 let rekodOpenIds = new Set();
 
 async function fetchRekod() {
@@ -769,6 +1044,7 @@ async function fetchRekod() {
     const res = await fetch(`${BACKEND_URL}/api/rekod?userId=${encodeURIComponent(userId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = await res.json();
+    rekodPage = 1;
     renderRekod(rows);
   } catch (err) {
     rekodList.innerHTML = `<div class="rekod-error">Gagal memuatkan rekod: ${escapeHtml(err.message)}</div>`;
@@ -785,7 +1061,16 @@ function renderRekod(rows) {
     return;
   }
 
-  rekodList.innerHTML = rows.map((row) => {
+  // Store all rows for PDF/delete use
+  window._rekodRows = rows;
+
+  const totalPages = Math.ceil(rows.length / REKOD_PER_PAGE);
+  rekodPage = Math.min(Math.max(rekodPage, 1), totalPages);
+
+  const start = (rekodPage - 1) * REKOD_PER_PAGE;
+  const pageRows = rows.slice(start, start + REKOD_PER_PAGE);
+
+  const cardsHtml = pageRows.map((row) => {
     const isOpen = rekodOpenIds.has(row.id);
     const situasiShort = (row.situasi || "").length > 120 ? row.situasi.slice(0, 120) + "…" : row.situasi;
     return `<div class="rekod-card" data-rekod-id="${row.id}">
@@ -817,9 +1102,32 @@ function renderRekod(rows) {
     </div>`;
   }).join("");
 
-  // Store rows for PDF use
-  window._rekodRows = rows;
+  const paginationHtml = totalPages > 1 ? `
+    <div class="rekod-pagination">
+      <button class="rekod-page-btn" onclick="goRekodPage(${rekodPage - 1})" ${rekodPage === 1 ? "disabled" : ""}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+        Sebelum
+      </button>
+      <div class="rekod-page-numbers">
+        ${Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => `
+          <button class="rekod-page-num ${p === rekodPage ? "active" : ""}" onclick="goRekodPage(${p})">${p}</button>
+        `).join("")}
+      </div>
+      <button class="rekod-page-btn" onclick="goRekodPage(${rekodPage + 1})" ${rekodPage === totalPages ? "disabled" : ""}>
+        Seterus
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <span class="rekod-page-info">${rows.length} rekod · Halaman ${rekodPage} / ${totalPages}</span>
+    </div>` : `<div class="rekod-pagination-info">${rows.length} rekod</div>`;
+
+  rekodList.innerHTML = cardsHtml + paginationHtml;
 }
+
+window.goRekodPage = function(page) {
+  rekodPage = page;
+  renderRekod(window._rekodRows || []);
+  document.getElementById("rekod-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
 
 function toggleRekodBody(id) {
   if (rekodOpenIds.has(id)) rekodOpenIds.delete(id);

@@ -230,8 +230,7 @@ Gaya penulisan:
 - Sertakan nombor seksyen PK 2.9 yang spesifik apabila relevan
 - Gunakan **bold** untuk perkara penting
 - Gunakan petikan dasar yang disediakan sebagai sumber utama
-- JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu...")
-- Nombor MESTI berurutan (1, 2, 3, 4...) — JANGAN gunakan 1, 1, 1 atau nombor yang berulang`;
+- JANGAN sertakan sebarang nota penutup, disclaimer, cadangan langkah seterusnya di luar format, atau tawaran bantuan tambahan (contoh: "jika anda mahu, saya boleh bantu..."`;
 
     const openai = getOpenAIClient();
     const stream = await openai.chat.completions.create({
